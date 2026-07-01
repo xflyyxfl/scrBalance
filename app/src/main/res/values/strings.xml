@@ -11,6 +11,8 @@
     <string name="left_screen_color">左屏覆盖色</string>
     <string name="right_screen_color">右屏覆盖色</string>
     <string name="overlay_opacity">透明度</string>
+    <string name="left_opacity">左屏透明度</string>
+    <string name="right_opacity">右屏透明度</string>
     <string name="overlay_mode">覆盖模式</string>
     <string name="mode_half_screen">半屏模式</string>
     <string name="mode_custom_area">自定义区域</string>

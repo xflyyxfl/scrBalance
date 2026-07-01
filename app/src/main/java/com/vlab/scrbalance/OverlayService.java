@@ -107,10 +107,11 @@ public class OverlayService extends Service {
         if (!config.isEnabled()) return;
         removeOverlay();
 
-        int opacity = config.getOpacity();
+        int leftOpacity = config.getLeftOpacity();
+        int rightOpacity = config.getRightOpacity();
         String mode = config.getMode();
-        int leftWithAlpha = applyAlpha(config.getLeftColor(), opacity);
-        int rightWithAlpha = applyAlpha(config.getRightColor(), opacity);
+        int leftWithAlpha = applyAlpha(config.getLeftColor(), leftOpacity);
+        int rightWithAlpha = applyAlpha(config.getRightColor(), rightOpacity);
 
         Display display = windowManager.getDefaultDisplay();
         android.graphics.Point realSize = new android.graphics.Point();

@@ -13,7 +13,8 @@ public class AppConfig {
     private static final String KEY_ENABLED = "overlay_enabled";
     private static final String KEY_LEFT_COLOR = "left_color";
     private static final String KEY_RIGHT_COLOR = "right_color";
-    private static final String KEY_OPACITY = "opacity";
+    private static final String KEY_LEFT_OPACITY = "left_opacity";
+    private static final String KEY_RIGHT_OPACITY = "right_opacity";
     private static final String KEY_MODE = "overlay_mode";
     private static final String KEY_AUTO_FOLD = "auto_fold_detect";
     private static final String KEY_CUSTOM_LEFT_START = "custom_left_start";
@@ -26,7 +27,8 @@ public class AppConfig {
     // Defaults
     public static final int DEFAULT_LEFT_COLOR = 0xFFFFE0B2;
     public static final int DEFAULT_RIGHT_COLOR = 0xFFB3E5FC;
-    public static final int DEFAULT_OPACITY = 30;
+    public static final int DEFAULT_LEFT_OPACITY = 30;
+    public static final int DEFAULT_RIGHT_OPACITY = 30;
     public static final String DEFAULT_MODE = "half";
     public static final boolean DEFAULT_AUTO_FOLD = true;
     public static final int DEFAULT_CUSTOM_LEFT_START = 0;
@@ -51,8 +53,11 @@ public class AppConfig {
     public int getRightColor() { return prefs.getInt(KEY_RIGHT_COLOR, DEFAULT_RIGHT_COLOR); }
     public void setRightColor(int v) { prefs.edit().putInt(KEY_RIGHT_COLOR, v).commit(); }
 
-    public int getOpacity() { return prefs.getInt(KEY_OPACITY, DEFAULT_OPACITY); }
-    public void setOpacity(int v) { prefs.edit().putInt(KEY_OPACITY, v).commit(); }
+    public int getLeftOpacity() { return prefs.getInt(KEY_LEFT_OPACITY, DEFAULT_LEFT_OPACITY); }
+    public void setLeftOpacity(int v) { prefs.edit().putInt(KEY_LEFT_OPACITY, v).commit(); }
+
+    public int getRightOpacity() { return prefs.getInt(KEY_RIGHT_OPACITY, DEFAULT_RIGHT_OPACITY); }
+    public void setRightOpacity(int v) { prefs.edit().putInt(KEY_RIGHT_OPACITY, v).commit(); }
 
     public String getMode() { return prefs.getString(KEY_MODE, DEFAULT_MODE); }
     public void setMode(String v) { prefs.edit().putString(KEY_MODE, v).commit(); }

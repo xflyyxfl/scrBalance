@@ -18,18 +18,33 @@
         android:titleTextColor="@android:color/white"
         android:title="@string/settings_title" />
 
-    <!-- Opacity -->
+    <!-- Left Opacity -->
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/overlay_opacity" android:textSize="16sp" android:textStyle="bold"
+        android:text="@string/left_opacity" android:textSize="16sp" android:textStyle="bold"
         android:textColor="#333333" android:layout_marginTop="16dp"/>
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
         android:orientation="horizontal" android:gravity="center_vertical">
-        <Button android:id="@+id/opacityMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+        <Button android:id="@+id/leftOpacityMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
             android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
-        <SeekBar android:id="@+id/opacitySeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-        <Button android:id="@+id/opacityPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+        <SeekBar android:id="@+id/leftOpacitySeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <Button android:id="@+id/leftOpacityPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
             android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
-        <TextView android:id="@+id/opacityValue" android:layout_width="60dp" android:layout_height="wrap_content"
+        <TextView android:id="@+id/leftOpacityValue" android:layout_width="60dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="14sp"/>
+    </LinearLayout>
+
+    <!-- Right Opacity -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/right_opacity" android:textSize="16sp" android:textStyle="bold"
+        android:textColor="#333333" android:layout_marginTop="8dp"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/rightOpacityMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <SeekBar android:id="@+id/rightOpacitySeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <Button android:id="@+id/rightOpacityPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/rightOpacityValue" android:layout_width="60dp" android:layout_height="wrap_content"
             android:gravity="center" android:textColor="#333333" android:textSize="14sp"/>
     </LinearLayout>
 

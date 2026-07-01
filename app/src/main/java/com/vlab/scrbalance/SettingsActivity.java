@@ -65,18 +65,31 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void initOpacity() {
-        SeekBar sb = findViewById(R.id.opacitySeekBar);
-        TextView tv = findViewById(R.id.opacityValue);
-        sb.setMax(100); sb.setProgress(config.getOpacity());
-        tv.setText(config.getOpacity() + "%");
-        sb.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
+        // 左屏透明度
+        SeekBar lsb = findViewById(R.id.leftOpacitySeekBar);
+        TextView ltv = findViewById(R.id.leftOpacityValue);
+        lsb.setMax(100); lsb.setProgress(config.getLeftOpacity());
+        ltv.setText(config.getLeftOpacity() + "%");
+        lsb.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override public void onProgressChanged(SeekBar s, int p, boolean f) {
-                tv.setText(p+"%");
-                config.setOpacity(p); notifyOverlayUpdate();
+                ltv.setText(p+"%");
+                config.setLeftOpacity(p); notifyOverlayUpdate();
             }
         });
-        // +/- 每次调整1%
-        bindButtons(R.id.opacityMinus, R.id.opacityPlus, R.id.opacitySeekBar, R.id.opacityValue, 1, 100);
+        bindButtons(R.id.leftOpacityMinus, R.id.leftOpacityPlus, R.id.leftOpacitySeekBar, R.id.leftOpacityValue, 1, 100);
+
+        // 右屏透明度
+        SeekBar rsb = findViewById(R.id.rightOpacitySeekBar);
+        TextView rtv = findViewById(R.id.rightOpacityValue);
+        rsb.setMax(100); rsb.setProgress(config.getRightOpacity());
+        rtv.setText(config.getRightOpacity() + "%");
+        rsb.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
+            @Override public void onProgressChanged(SeekBar s, int p, boolean f) {
+                rtv.setText(p+"%");
+                config.setRightOpacity(p); notifyOverlayUpdate();
+            }
+        });
+        bindButtons(R.id.rightOpacityMinus, R.id.rightOpacityPlus, R.id.rightOpacitySeekBar, R.id.rightOpacityValue, 1, 100);
     }
 
     private void initMode() {
