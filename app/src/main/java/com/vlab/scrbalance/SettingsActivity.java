@@ -258,11 +258,19 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        config.setSettingsMode(true); // 暂停亮度插值，让用户手动调整生效
         // 更新当前亮度显示
         TextView currentBrightness = findViewById(R.id.currentBrightness);
         int brightnessPercent = getCurrentBrightnessPercent();
         currentBrightness.setText(getString(R.string.current_brightness, brightnessPercent));
         refreshProfileList();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        config.setSettingsMode(false); // 恢复亮度插值
+        notifyOverlayUpdate();
     }
 
     private void initOpacity() {

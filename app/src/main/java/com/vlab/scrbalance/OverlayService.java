@@ -13,6 +13,8 @@ import android.os.IBinder;
 import android.provider.Settings;
 import android.view.Display;
 import android.view.Gravity;
+import android.view.OrientationEventListener;
+import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
 
@@ -20,7 +22,7 @@ import java.util.List;
 
 /**
  * 悬浮窗覆盖服务 - 在屏幕上方显示半透明校正层
- * 支持亮度校色配置的线性插值
+ * 支持亮度校色配置的线性插值，支持旋转纠正
  */
 public class OverlayService extends Service {
 
@@ -34,6 +36,8 @@ public class OverlayService extends Service {
     private FoldDetector foldDetector;
     private ContentObserver brightnessObserver;
     private Handler brightnessHandler;
+    private OrientationEventListener orientationListener;
+    private int lastRotation = -1;
 
     @Override
     public void onCreate() {
@@ -64,6 +68,22 @@ public class OverlayService extends Service {
         getContentResolver().registerContentObserver(
                 Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS_MODE), false, brightnessObserver);
 
+        // 监听屏幕旋转变化
+        orientationListener = new OrientationEventListener(this) {
+            @Override
+            public void onOrientationChanged(int orientation) {
+                if (orientation == OrientationEventListener.ORIENTATION_UNKNOWN) return;
+                int currentRotation = windowManager.getDefaultDisplay().getRotation();
+                if (currentRotation != lastRotation) {
+                    lastRotation = currentRotation;
+                    updateOverlayForBrightness();
+                }
+            }
+        };
+        if (orientationListener.canDetectOrientation()) {
+            orientationListener.enable();
+        }
+
         createNotificationChannel();
         startForeground(NOTIFICATION_ID, createNotification());
 
@@ -90,6 +110,7 @@ public class OverlayService extends Service {
         super.onDestroy();
         foldDetector.stopListening();
         getContentResolver().unregisterContentObserver(brightnessObserver);
+        if (orientationListener != null) orientationListener.disable();
         removeOverlay();
     }
 
@@ -145,6 +166,13 @@ public class OverlayService extends Service {
             return;
         }
 
+        // 设置模式：暂停亮度插值，直接使用手动设置值
+        if (config.isSettingsMode()) {
+            showOverlayWithValues(config.getLeftColor(), config.getRightColor(),
+                    config.getLeftOpacity(), config.getRightOpacity());
+            return;
+        }
+
         List<BrightnessProfile> profiles = config.getBrightnessProfiles();
         int currentBrightness = getCurrentBrightness();
 
@@ -164,7 +192,6 @@ public class OverlayService extends Service {
      * 返回 [leftColor, rightColor, leftOpacity, rightOpacity]
      */
     private int[] interpolate(List<BrightnessProfile> profiles, int currentBrightness) {
-        // profiles已按亮度排序
         BrightnessProfile lower = null, upper = null;
 
         for (BrightnessProfile p : profiles) {
@@ -173,27 +200,22 @@ public class OverlayService extends Service {
         }
 
         if (lower == null && upper == null) {
-            // 不应发生（profiles非空）
             BrightnessProfile fallback = profiles.get(0);
             return new int[]{fallback.leftColor, fallback.rightColor, fallback.leftOpacity, fallback.rightOpacity};
         }
 
         if (lower == null) {
-            // 亮度低于所有配置点，使用最低点
             return new int[]{upper.leftColor, upper.rightColor, upper.leftOpacity, upper.rightOpacity};
         }
 
         if (upper == null) {
-            // 亮度高于所有配置点，使用最高点
             return new int[]{lower.leftColor, lower.rightColor, lower.leftOpacity, lower.rightOpacity};
         }
 
         if (lower.brightness == upper.brightness) {
-            // 精确匹配某个配置点
             return new int[]{lower.leftColor, lower.rightColor, lower.leftOpacity, lower.rightOpacity};
         }
 
-        // 线性插值
         float ratio = (float) (currentBrightness - lower.brightness) / (upper.brightness - lower.brightness);
         int leftColor = interpolateColor(lower.leftColor, upper.leftColor, ratio);
         int rightColor = interpolateColor(lower.rightColor, upper.rightColor, ratio);
@@ -213,7 +235,7 @@ public class OverlayService extends Service {
         return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
-    /** 使用指定颜色和透明度值显示覆盖层 */
+    /** 使用指定颜色和透明度值显示覆盖层，并根据屏幕旋转纠正位置 */
     private void showOverlayWithValues(int leftColor, int rightColor, int leftOpacity, int rightOpacity) {
         removeOverlay();
 
@@ -225,6 +247,8 @@ public class OverlayService extends Service {
         display.getRealSize(realSize);
         int screenWidth = realSize.x;
         int screenHeight = realSize.y;
+        int rotation = display.getRotation();
+        lastRotation = rotation;
 
         int overlayType = getOverlayType();
         int flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
@@ -235,6 +259,7 @@ public class OverlayService extends Service {
         String mode = config.getMode();
 
         if (mode.equals("custom")) {
+            // 自定义区域模式 - 使用百分比坐标（基于当前显示尺寸）
             int leftStart = config.getCustomLeftStart() * screenWidth / 100;
             int leftEnd = config.getCustomLeftEnd() * screenWidth / 100;
             int rightStart = config.getCustomRightStart() * screenWidth / 100;
@@ -258,24 +283,42 @@ public class OverlayService extends Service {
             rp.x = rightStart; rp.y = top;
             windowManager.addView(overlayRightView, rp);
         } else {
-            int halfWidth = screenWidth / 2;
-
-            overlayLeftView = new View(this);
-            overlayLeftView.setBackgroundColor(leftWithAlpha);
-            WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                    halfWidth, screenHeight, overlayType, flags, PixelFormat.TRANSLUCENT);
-            lp.gravity = Gravity.TOP | Gravity.LEFT;
-            lp.x = 0; lp.y = 0;
-            windowManager.addView(overlayLeftView, lp);
-
-            overlayRightView = new View(this);
-            overlayRightView.setBackgroundColor(rightWithAlpha);
-            WindowManager.LayoutParams rp = new WindowManager.LayoutParams(
-                    halfWidth, screenHeight, overlayType, flags, PixelFormat.TRANSLUCENT);
-            rp.gravity = Gravity.TOP | Gravity.LEFT;
-            rp.x = halfWidth; rp.y = 0;
-            windowManager.addView(overlayRightView, rp);
+            // 半屏模式 - 根据旋转纠正：确保"左色"始终覆盖物理左屏，"右色"始终覆盖物理右屏
+            // 设置时锁定竖屏(ROTATION_0)，因此配置总是基于portrait方向
+            switch (rotation) {
+                case Surface.ROTATION_0: // 竖屏：左色在左半，右色在右半
+                    overlayLeftView = addOverlayView(leftWithAlpha, 0, 0, screenWidth / 2, screenHeight, overlayType, flags);
+                    overlayRightView = addOverlayView(rightWithAlpha, screenWidth / 2, 0, screenWidth / 2, screenHeight, overlayType, flags);
+                    break;
+                case Surface.ROTATION_90: // 横屏(CW)：物理左屏在底部，物理右屏在顶部
+                    overlayLeftView = addOverlayView(leftWithAlpha, 0, screenHeight / 2, screenWidth, screenHeight / 2, overlayType, flags);
+                    overlayRightView = addOverlayView(rightWithAlpha, 0, 0, screenWidth, screenHeight / 2, overlayType, flags);
+                    break;
+                case Surface.ROTATION_180: // 反竖屏：物理左屏在右侧，物理右屏在左侧
+                    overlayLeftView = addOverlayView(leftWithAlpha, screenWidth / 2, 0, screenWidth / 2, screenHeight, overlayType, flags);
+                    overlayRightView = addOverlayView(rightWithAlpha, 0, 0, screenWidth / 2, screenHeight, overlayType, flags);
+                    break;
+                case Surface.ROTATION_270: // 横屏(CCW)：物理左屏在顶部，物理右屏在底部
+                    overlayLeftView = addOverlayView(leftWithAlpha, 0, 0, screenWidth, screenHeight / 2, overlayType, flags);
+                    overlayRightView = addOverlayView(rightWithAlpha, 0, screenHeight / 2, screenWidth, screenHeight / 2, overlayType, flags);
+                    break;
+                default: // 未知旋转，fallback到竖屏布局
+                    overlayLeftView = addOverlayView(leftWithAlpha, 0, 0, screenWidth / 2, screenHeight, overlayType, flags);
+                    overlayRightView = addOverlayView(rightWithAlpha, screenWidth / 2, 0, screenWidth / 2, screenHeight, overlayType, flags);
+                    break;
+            }
         }
+    }
+
+    /** 添加一个覆盖层视图 */
+    private View addOverlayView(int color, int x, int y, int w, int h, int overlayType, int flags) {
+        View view = new View(this);
+        view.setBackgroundColor(color);
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(w, h, overlayType, flags, PixelFormat.TRANSLUCENT);
+        lp.gravity = Gravity.TOP | Gravity.LEFT;
+        lp.x = x; lp.y = y;
+        windowManager.addView(view, lp);
+        return view;
     }
 
     private void updateOverlayForScreenSize() {

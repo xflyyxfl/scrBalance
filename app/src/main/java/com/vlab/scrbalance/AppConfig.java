@@ -30,6 +30,7 @@ public class AppConfig {
     private static final String KEY_CUSTOM_TOP = "custom_top";
     private static final String KEY_CUSTOM_BOTTOM = "custom_bottom";
     private static final String KEY_BRIGHTNESS_PROFILES = "brightness_profiles";
+    private static final String KEY_SETTINGS_MODE = "settings_mode";
 
     // Defaults
     public static final int DEFAULT_LEFT_COLOR = 0xFFFFE0B2;
@@ -135,6 +136,10 @@ public class AppConfig {
         profiles.removeIf(p -> p.brightness == brightness);
         saveBrightnessProfiles(profiles);
     }
+
+    /** 设置模式标志：当用户在校色设置界面时暂停亮度插值，直接使用手动设置值 */
+    public boolean isSettingsMode() { return prefs.getBoolean(KEY_SETTINGS_MODE, false); }
+    public void setSettingsMode(boolean v) { prefs.edit().putBoolean(KEY_SETTINGS_MODE, v).commit(); }
 
     public void resetDefaults() { prefs.edit().clear().commit(); }
 }
