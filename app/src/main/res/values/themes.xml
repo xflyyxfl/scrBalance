@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.ScrBalance" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <!-- 通用主题（强制浅色，校色时需要白色背景） -->
+    <style name="Theme.ScrBalance" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:forceDarkAllowed">false</item>
     </style>
 </resources>

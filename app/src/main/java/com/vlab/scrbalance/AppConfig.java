@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 /**
- * 应用配置管理
+ * 应用配置管理 - 所有写入使用commit()确保即时持久化
  */
 public class AppConfig {
 
@@ -43,42 +43,40 @@ public class AppConfig {
     }
 
     public boolean isEnabled() { return prefs.getBoolean(KEY_ENABLED, false); }
-    public void setEnabled(boolean v) { prefs.edit().putBoolean(KEY_ENABLED, v).apply(); }
+    public void setEnabled(boolean v) { prefs.edit().putBoolean(KEY_ENABLED, v).commit(); }
 
     public int getLeftColor() { return prefs.getInt(KEY_LEFT_COLOR, DEFAULT_LEFT_COLOR); }
-    public void setLeftColor(int v) { prefs.edit().putInt(KEY_LEFT_COLOR, v).apply(); }
+    public void setLeftColor(int v) { prefs.edit().putInt(KEY_LEFT_COLOR, v).commit(); }
 
     public int getRightColor() { return prefs.getInt(KEY_RIGHT_COLOR, DEFAULT_RIGHT_COLOR); }
-    public void setRightColor(int v) { prefs.edit().putInt(KEY_RIGHT_COLOR, v).apply(); }
+    public void setRightColor(int v) { prefs.edit().putInt(KEY_RIGHT_COLOR, v).commit(); }
 
     public int getOpacity() { return prefs.getInt(KEY_OPACITY, DEFAULT_OPACITY); }
-    public void setOpacity(int v) { prefs.edit().putInt(KEY_OPACITY, v).apply(); }
+    public void setOpacity(int v) { prefs.edit().putInt(KEY_OPACITY, v).commit(); }
 
     public String getMode() { return prefs.getString(KEY_MODE, DEFAULT_MODE); }
-    public void setMode(String v) { prefs.edit().putString(KEY_MODE, v).apply(); }
+    public void setMode(String v) { prefs.edit().putString(KEY_MODE, v).commit(); }
 
     public boolean isAutoFoldDetect() { return prefs.getBoolean(KEY_AUTO_FOLD, DEFAULT_AUTO_FOLD); }
-    public void setAutoFoldDetect(boolean v) { prefs.edit().putBoolean(KEY_AUTO_FOLD, v).apply(); }
+    public void setAutoFoldDetect(boolean v) { prefs.edit().putBoolean(KEY_AUTO_FOLD, v).commit(); }
 
     public int getCustomLeftStart() { return prefs.getInt(KEY_CUSTOM_LEFT_START, DEFAULT_CUSTOM_LEFT_START); }
-    public void setCustomLeftStart(int v) { prefs.edit().putInt(KEY_CUSTOM_LEFT_START, v).apply(); }
+    public void setCustomLeftStart(int v) { prefs.edit().putInt(KEY_CUSTOM_LEFT_START, v).commit(); }
 
     public int getCustomLeftEnd() { return prefs.getInt(KEY_CUSTOM_LEFT_END, DEFAULT_CUSTOM_LEFT_END); }
-    public void setCustomLeftEnd(int v) { prefs.edit().putInt(KEY_CUSTOM_LEFT_END, v).apply(); }
+    public void setCustomLeftEnd(int v) { prefs.edit().putInt(KEY_CUSTOM_LEFT_END, v).commit(); }
 
     public int getCustomRightStart() { return prefs.getInt(KEY_CUSTOM_RIGHT_START, DEFAULT_CUSTOM_RIGHT_START); }
-    public void setCustomRightStart(int v) { prefs.edit().putInt(KEY_CUSTOM_RIGHT_START, v).apply(); }
+    public void setCustomRightStart(int v) { prefs.edit().putInt(KEY_CUSTOM_RIGHT_START, v).commit(); }
 
     public int getCustomRightEnd() { return prefs.getInt(KEY_CUSTOM_RIGHT_END, DEFAULT_CUSTOM_RIGHT_END); }
-    public void setCustomRightEnd(int v) { prefs.edit().putInt(KEY_CUSTOM_RIGHT_END, v).apply(); }
+    public void setCustomRightEnd(int v) { prefs.edit().putInt(KEY_CUSTOM_RIGHT_END, v).commit(); }
 
     public int getCustomTop() { return prefs.getInt(KEY_CUSTOM_TOP, DEFAULT_CUSTOM_TOP); }
-    public void setCustomTop(int v) { prefs.edit().putInt(KEY_CUSTOM_TOP, v).apply(); }
+    public void setCustomTop(int v) { prefs.edit().putInt(KEY_CUSTOM_TOP, v).commit(); }
 
     public int getCustomBottom() { return prefs.getInt(KEY_CUSTOM_BOTTOM, DEFAULT_CUSTOM_BOTTOM); }
-    public void setCustomBottom(int v) { prefs.edit().putInt(KEY_CUSTOM_BOTTOM, v).apply(); }
+    public void setCustomBottom(int v) { prefs.edit().putInt(KEY_CUSTOM_BOTTOM, v).commit(); }
 
-    public void resetDefaults() {
-        prefs.edit().clear().apply();
-    }
+    public void resetDefaults() { prefs.edit().clear().commit(); }
 }

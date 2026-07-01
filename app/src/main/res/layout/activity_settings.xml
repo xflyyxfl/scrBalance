@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#FFFFFF">
+
 <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -18,84 +20,221 @@
 
     <!-- Opacity -->
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/overlay_opacity" android:textSize="16sp" android:textStyle="bold" android:layout_marginTop="16dp"/>
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        android:text="@string/overlay_opacity" android:textSize="16sp" android:textStyle="bold"
+        android:textColor="#333333" android:layout_marginTop="16dp"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/opacityMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
         <SeekBar android:id="@+id/opacitySeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-        <TextView android:id="@+id/opacityValue" android:layout_width="60dp" android:layout_height="wrap_content" android:gravity="center"/>
+        <Button android:id="@+id/opacityPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/opacityValue" android:layout_width="60dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="14sp"/>
     </LinearLayout>
 
     <!-- Mode -->
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/overlay_mode" android:textSize="16sp" android:textStyle="bold" android:layout_marginTop="16dp"/>
-    <RadioGroup android:id="@+id/modeRadioGroup" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-        <RadioButton android:id="@+id/halfScreenRadio" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/mode_half_screen"/>
-        <RadioButton android:id="@+id/customAreaRadio" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/mode_custom_area"/>
+        android:text="@string/overlay_mode" android:textSize="16sp" android:textStyle="bold"
+        android:textColor="#333333" android:layout_marginTop="16dp"/>
+    <RadioGroup android:id="@+id/modeRadioGroup" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <RadioButton android:id="@+id/halfScreenRadio" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="@string/mode_half_screen" android:textColor="#333333"/>
+        <RadioButton android:id="@+id/customAreaRadio" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="@string/mode_custom_area" android:textColor="#333333"/>
     </RadioGroup>
 
     <!-- Auto Fold -->
-    <CheckBox android:id="@+id/autoFoldCheckbox" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/auto_fold_detect" android:layout_marginTop="12dp"/>
+    <CheckBox android:id="@+id/autoFoldCheckbox" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/auto_fold_detect" android:textColor="#333333" android:layout_marginTop="12dp"/>
 
     <!-- Left Color -->
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/left_screen_color" android:textSize="16sp" android:textStyle="bold" android:layout_marginTop="16dp"/>
-    <TextView android:id="@+id/leftColorPreview" android:layout_width="match_parent" android:layout_height="40dp" android:gravity="center" android:textColor="@android:color/white" android:textSize="12sp"/>
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="R"/>
-    <SeekBar android:id="@+id/leftRedSeekBar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="G"/>
-    <SeekBar android:id="@+id/leftGreenSeekBar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="B"/>
-    <SeekBar android:id="@+id/leftBlueSeekBar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+        android:text="@string/left_screen_color" android:textSize="16sp" android:textStyle="bold"
+        android:textColor="#333333" android:layout_marginTop="16dp"/>
+    <TextView android:id="@+id/leftColorPreview" android:layout_width="match_parent" android:layout_height="40dp"
+        android:gravity="center" android:textColor="@android:color/white" android:textSize="12sp"
+        android:layout_marginBottom="4dp"/>
+    <!-- R -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/leftRedMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="R"
+            android:textColor="#333333" android:textSize="14sp" android:gravity="center"/>
+        <SeekBar android:id="@+id/leftRedSeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <Button android:id="@+id/leftRedPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/leftRedValue" android:layout_width="36dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
+    </LinearLayout>
+    <!-- G -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/leftGreenMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="G"
+            android:textColor="#333333" android:textSize="14sp" android:gravity="center"/>
+        <SeekBar android:id="@+id/leftGreenSeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <Button android:id="@+id/leftGreenPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/leftGreenValue" android:layout_width="36dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
+    </LinearLayout>
+    <!-- B -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/leftBlueMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="B"
+            android:textColor="#333333" android:textSize="14sp" android:gravity="center"/>
+        <SeekBar android:id="@+id/leftBlueSeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <Button android:id="@+id/leftBluePlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/leftBlueValue" android:layout_width="36dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
+    </LinearLayout>
 
     <!-- Right Color -->
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/right_screen_color" android:textSize="16sp" android:textStyle="bold" android:layout_marginTop="16dp"/>
-    <TextView android:id="@+id/rightColorPreview" android:layout_width="match_parent" android:layout_height="40dp" android:gravity="center" android:textColor="@android:color/white" android:textSize="12sp"/>
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="R"/>
-    <SeekBar android:id="@+id/rightRedSeekBar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="G"/>
-    <SeekBar android:id="@+id/rightGreenSeekBar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="B"/>
-    <SeekBar android:id="@+id/rightBlueSeekBar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+        android:text="@string/right_screen_color" android:textSize="16sp" android:textStyle="bold"
+        android:textColor="#333333" android:layout_marginTop="16dp"/>
+    <TextView android:id="@+id/rightColorPreview" android:layout_width="match_parent" android:layout_height="40dp"
+        android:gravity="center" android:textColor="@android:color/white" android:textSize="12sp"
+        android:layout_marginBottom="4dp"/>
+    <!-- R -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/rightRedMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="R"
+            android:textColor="#333333" android:textSize="14sp" android:gravity="center"/>
+        <SeekBar android:id="@+id/rightRedSeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <Button android:id="@+id/rightRedPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/rightRedValue" android:layout_width="36dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
+    </LinearLayout>
+    <!-- G -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/rightGreenMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="G"
+            android:textColor="#333333" android:textSize="14sp" android:gravity="center"/>
+        <SeekBar android:id="@+id/rightGreenSeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <Button android:id="@+id/rightGreenPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/rightGreenValue" android:layout_width="36dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
+    </LinearLayout>
+    <!-- B -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/rightBlueMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="B"
+            android:textColor="#333333" android:textSize="14sp" android:gravity="center"/>
+        <SeekBar android:id="@+id/rightBlueSeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <Button android:id="@+id/rightBluePlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/rightBlueValue" android:layout_width="36dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
+    </LinearLayout>
 
     <!-- Custom Area Section -->
-    <LinearLayout android:id="@+id/customAreaSection" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+    <LinearLayout android:id="@+id/customAreaSection" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:visibility="gone">
         <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="@string/overlay_area" android:textSize="16sp" android:textStyle="bold" android:layout_marginTop="16dp"/>
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/custom_left" android:textStyle="bold"/>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="起%"/>
+            android:text="@string/overlay_area" android:textSize="16sp" android:textStyle="bold"
+            android:textColor="#333333" android:layout_marginTop="16dp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/custom_left" android:textStyle="bold" android:textColor="#333333"/>
+        <!-- Left Start -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <Button android:id="@+id/customLeftStartMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+                android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="起%"
+                android:textColor="#333333" android:textSize="13sp"/>
             <SeekBar android:id="@+id/customLeftStartBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-            <TextView android:id="@+id/customLeftStartValue" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center"/>
+            <Button android:id="@+id/customLeftStartPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+                android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+            <TextView android:id="@+id/customLeftStartValue" android:layout_width="40dp" android:layout_height="wrap_content"
+                android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
         </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="终%"/>
+        <!-- Left End -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <Button android:id="@+id/customLeftEndMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+                android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="终%"
+                android:textColor="#333333" android:textSize="13sp"/>
             <SeekBar android:id="@+id/customLeftEndBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-            <TextView android:id="@+id/customLeftEndValue" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center"/>
+            <Button android:id="@+id/customLeftEndPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+                android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+            <TextView android:id="@+id/customLeftEndValue" android:layout_width="40dp" android:layout_height="wrap_content"
+                android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
         </LinearLayout>
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/custom_right" android:textStyle="bold"/>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="起%"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/custom_right" android:textStyle="bold" android:textColor="#333333"/>
+        <!-- Right Start -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <Button android:id="@+id/customRightStartMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+                android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="起%"
+                android:textColor="#333333" android:textSize="13sp"/>
             <SeekBar android:id="@+id/customRightStartBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-            <TextView android:id="@+id/customRightStartValue" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center"/>
+            <Button android:id="@+id/customRightStartPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+                android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+            <TextView android:id="@+id/customRightStartValue" android:layout_width="40dp" android:layout_height="wrap_content"
+                android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
         </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="终%"/>
+        <!-- Right End -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <Button android:id="@+id/customRightEndMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+                android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="终%"
+                android:textColor="#333333" android:textSize="13sp"/>
             <SeekBar android:id="@+id/customRightEndBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-            <TextView android:id="@+id/customRightEndValue" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center"/>
+            <Button android:id="@+id/customRightEndPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+                android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+            <TextView android:id="@+id/customRightEndValue" android:layout_width="40dp" android:layout_height="wrap_content"
+                android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
         </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="上%"/>
+        <!-- Top -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <Button android:id="@+id/customTopMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+                android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="上%"
+                android:textColor="#333333" android:textSize="13sp"/>
             <SeekBar android:id="@+id/customTopBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-            <TextView android:id="@+id/customTopValue" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center"/>
+            <Button android:id="@+id/customTopPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+                android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+            <TextView android:id="@+id/customTopValue" android:layout_width="40dp" android:layout_height="wrap_content"
+                android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
         </LinearLayout>
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="下%"/>
+        <!-- Bottom -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <Button android:id="@+id/customBottomMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+                android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="下%"
+                android:textColor="#333333" android:textSize="13sp"/>
             <SeekBar android:id="@+id/customBottomBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-            <TextView android:id="@+id/customBottomValue" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center"/>
+            <Button android:id="@+id/customBottomPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+                android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+            <TextView android:id="@+id/customBottomValue" android:layout_width="40dp" android:layout_height="wrap_content"
+                android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
         </LinearLayout>
     </LinearLayout>
 
-    <Button android:id="@+id/resetBtn" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/reset_defaults" android:layout_marginTop="24dp"/>
+    <Button android:id="@+id/resetBtn" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/reset_defaults" android:layout_marginTop="24dp"/>
 
 </LinearLayout>
 </ScrollView>

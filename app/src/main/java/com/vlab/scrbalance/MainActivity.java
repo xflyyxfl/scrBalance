@@ -50,6 +50,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         updateUI();
+        // 如果之前已启用，恢复服务运行
+        if (config.isEnabled() && hasOverlayPermission()) {
+            Intent intent = new Intent(this, OverlayService.class);
+            intent.setAction("ACTION_UPDATE");
+            startService(intent);
+        }
     }
 
     private void updateUI() {
