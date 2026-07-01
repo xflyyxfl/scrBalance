@@ -3,16 +3,22 @@ package com.vlab.scrbalance;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.provider.Settings;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+
+import java.util.List;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -55,6 +61,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void initAll() {
+        initBrightnessProfiles();
         initOpacity();
         initMode();
         initAutoFold();
@@ -62,6 +69,200 @@ public class SettingsActivity extends AppCompatActivity {
         initColor(false);
         initCustomArea();
         findViewById(R.id.resetBtn).setOnClickListener(v -> { config.resetDefaults(); notifyOverlayUpdate(); recreate(); });
+    }
+
+    /** 获取当前屏幕亮度百分比 */
+    private int getCurrentBrightnessPercent() {
+        try {
+            int brightness = Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS);
+            return (int) Math.round(brightness * 100.0 / 255.0);
+        } catch (Exception e) {
+            return 50;
+        }
+    }
+
+    /** 获取当前屏幕亮度值(0-255) */
+    private int getCurrentBrightnessValue() {
+        try {
+            return Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS);
+        } catch (Exception e) {
+            return 128;
+        }
+    }
+
+    private void initBrightnessProfiles() {
+        // 显示当前亮度
+        TextView currentBrightness = findViewById(R.id.currentBrightness);
+        int brightnessPercent = getCurrentBrightnessPercent();
+        currentBrightness.setText(getString(R.string.current_brightness, brightnessPercent));
+
+        // "添加亮度配置"按钮
+        findViewById(R.id.addProfileBtn).setOnClickListener(v -> showAddProfileDialog());
+
+        // 刷新配置列表
+        refreshProfileList();
+    }
+
+    /** 显示添加亮度配置对话框 - 用SeekBar选择亮度百分比 */
+    private void showAddProfileDialog() {
+        LinearLayout dialogLayout = new LinearLayout(this);
+        dialogLayout.setOrientation(LinearLayout.VERTICAL);
+        dialogLayout.setPadding(40, 20, 40, 20);
+
+        TextView label = new TextView(this);
+        label.setText("选择亮度百分比(当前: " + getCurrentBrightnessPercent() + "%)");
+        label.setTextSize(14);
+        label.setTextColor(0xFF333333);
+        dialogLayout.addView(label);
+
+        SeekBar brightnessBar = new SeekBar(this);
+        brightnessBar.setMax(100);
+        brightnessBar.setProgress(getCurrentBrightnessPercent());
+        dialogLayout.addView(brightnessBar);
+
+        TextView brightnessValue = new TextView(this);
+        brightnessValue.setText(getCurrentBrightnessPercent() + "%");
+        brightnessValue.setTextSize(16);
+        brightnessValue.setGravity(Gravity.CENTER);
+        brightnessValue.setTextColor(0xFF333333);
+        dialogLayout.addView(brightnessValue);
+
+        brightnessBar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
+            @Override public void onProgressChanged(SeekBar s, int p, boolean f) {
+                brightnessValue.setText(p + "%");
+            }
+        });
+
+        new AlertDialog.Builder(this)
+                .setTitle(getString(R.string.add_brightness_profile))
+                .setView(dialogLayout)
+                .setPositiveButton("保存", (d, w) -> {
+                    int selectedPercent = brightnessBar.getProgress();
+                    int brightnessValue255 = (int) Math.round(selectedPercent * 255.0 / 100.0);
+                    // 保存当前设置值作为该亮度下的配置
+                    BrightnessProfile profile = new BrightnessProfile(
+                            brightnessValue255,
+                            config.getLeftColor(),
+                            config.getRightColor(),
+                            config.getLeftOpacity(),
+                            config.getRightOpacity()
+                    );
+                    config.addOrUpdateBrightnessProfile(profile);
+                    refreshProfileList();
+                    notifyOverlayUpdate();
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    /** 刷新亮度配置列表 */
+    private void refreshProfileList() {
+        LinearLayout profileList = findViewById(R.id.profileList);
+        profileList.removeAllViews();
+
+        List<BrightnessProfile> profiles = config.getBrightnessProfiles();
+        for (BrightnessProfile profile : profiles) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(0, 4, 0, 4);
+
+            // 亮度百分比
+            TextView brightnessText = new TextView(this);
+            brightnessText.setText(profile.brightnessPercent() + "%");
+            brightnessText.setTextSize(14);
+            brightnessText.setTextColor(0xFF333333);
+            brightnessText.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.5f));
+            row.addView(brightnessText);
+
+            // 左色预览
+            View leftPreview = new View(this);
+            leftPreview.setBackgroundColor(applyAlphaPreview(profile.leftColor, profile.leftOpacity));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(30, 30);
+            lp.setMargins(4, 0, 4, 0);
+            leftPreview.setLayoutParams(lp);
+            row.addView(leftPreview);
+
+            // 右色预览
+            View rightPreview = new View(this);
+            rightPreview.setBackgroundColor(applyAlphaPreview(profile.rightColor, profile.rightOpacity));
+            LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(30, 30);
+            rp.setMargins(4, 0, 8, 0);
+            rightPreview.setLayoutParams(rp);
+            row.addView(rightPreview);
+
+            // 透明度信息
+            TextView opacityText = new TextView(this);
+            opacityText.setText("L" + profile.leftOpacity + "% R" + profile.rightOpacity + "%");
+            opacityText.setTextSize(12);
+            opacityText.setTextColor(0xFF666666);
+            opacityText.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 2f));
+            row.addView(opacityText);
+
+            // 加载按钮（将配置值加载到设置界面）
+            Button loadBtn = new Button(this);
+            loadBtn.setText("加载");
+            loadBtn.setTextSize(12);
+            loadBtn.setBackgroundColor(0xFFE0E0E0);
+            loadBtn.setTextColor(0xFF333333);
+            LinearLayout.LayoutParams loadLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 32);
+            loadBtn.setLayoutParams(loadLp);
+            loadBtn.setOnClickListener(v -> {
+                config.setLeftColor(profile.leftColor);
+                config.setRightColor(profile.rightColor);
+                config.setLeftOpacity(profile.leftOpacity);
+                config.setRightOpacity(profile.rightOpacity);
+                notifyOverlayUpdate();
+                recreate(); // 重新加载界面以更新控件值
+            });
+            row.addView(loadBtn);
+
+            // 删除按钮
+            Button deleteBtn = new Button(this);
+            deleteBtn.setText("删除");
+            deleteBtn.setTextSize(12);
+            deleteBtn.setBackgroundColor(0xFFFFCDD2);
+            deleteBtn.setTextColor(0xFF333333);
+            LinearLayout.LayoutParams delLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 32);
+            delLp.setMargins(4, 0, 0, 0);
+            deleteBtn.setLayoutParams(delLp);
+            deleteBtn.setOnClickListener(v -> {
+                config.removeBrightnessProfile(profile.brightness);
+                refreshProfileList();
+                notifyOverlayUpdate();
+            });
+            row.addView(deleteBtn);
+
+            profileList.addView(row);
+        }
+
+        // 更新提示文字
+        TextView hint = findViewById(R.id.brightnessHint);
+        if (profiles.isEmpty()) {
+            hint.setText(getString(R.string.brightness_profile_hint));
+        } else {
+            hint.setText(getString(R.string.brightness_profile_active, profiles.size()));
+        }
+    }
+
+    /** 预览用的颜色（含透明度） */
+    private int applyAlphaPreview(int color, int opacity) {
+        int alpha = Math.round(opacity * 2.55f);
+        alpha = Math.max(0, Math.min(255, alpha));
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
+        return (alpha << 24) | (r << 16) | (g << 8) | b;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 更新当前亮度显示
+        TextView currentBrightness = findViewById(R.id.currentBrightness);
+        int brightnessPercent = getCurrentBrightnessPercent();
+        currentBrightness.setText(getString(R.string.current_brightness, brightnessPercent));
+        refreshProfileList();
     }
 
     private void initOpacity() {

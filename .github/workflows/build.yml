@@ -44,3 +44,19 @@ jobs:
         with:
           name: release-apk
           path: app/build/outputs/apk/release/*.apk
+
+      - name: Create Release and Upload APK
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.${{ github.run_number }}
+          name: Build #${{ github.run_number }}
+          files: app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify WeChat
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        run: |
+          DOWNLOAD_URL="${{ github.server_url }}/${{ github.repository }}/releases/download/v1.${{ github.run_number }}/app-debug.apk"
+          curl -G "https://peiyun.cn/msg/wemsg" --data-urlencode "msg=${DOWNLOAD_URL}" --data-urlencode "to=xfl"

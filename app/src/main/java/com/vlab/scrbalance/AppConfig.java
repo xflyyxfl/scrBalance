@@ -3,6 +3,12 @@ package com.vlab.scrbalance;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import org.json.JSONArray;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * 应用配置管理 - 所有写入使用commit()确保即时持久化
  */
@@ -23,6 +29,7 @@ public class AppConfig {
     private static final String KEY_CUSTOM_RIGHT_END = "custom_right_end";
     private static final String KEY_CUSTOM_TOP = "custom_top";
     private static final String KEY_CUSTOM_BOTTOM = "custom_bottom";
+    private static final String KEY_BRIGHTNESS_PROFILES = "brightness_profiles";
 
     // Defaults
     public static final int DEFAULT_LEFT_COLOR = 0xFFFFE0B2;
@@ -82,6 +89,52 @@ public class AppConfig {
 
     public int getCustomBottom() { return prefs.getInt(KEY_CUSTOM_BOTTOM, DEFAULT_CUSTOM_BOTTOM); }
     public void setCustomBottom(int v) { prefs.edit().putInt(KEY_CUSTOM_BOTTOM, v).commit(); }
+
+    /** 获取亮度校色配置列表（按亮度排序） */
+    public List<BrightnessProfile> getBrightnessProfiles() {
+        String json = prefs.getString(KEY_BRIGHTNESS_PROFILES, "[]");
+        List<BrightnessProfile> profiles = new ArrayList<>();
+        try {
+            JSONArray arr = new JSONArray(json);
+            for (int i = 0; i < arr.length(); i++) {
+                profiles.add(new BrightnessProfile(arr.getJSONObject(i)));
+            }
+        } catch (Exception ignored) {}
+        Collections.sort(profiles, (a, b) -> a.brightness - b.brightness);
+        return profiles;
+    }
+
+    /** 保存亮度校色配置列表 */
+    public void saveBrightnessProfiles(List<BrightnessProfile> profiles) {
+        Collections.sort(profiles, (a, b) -> a.brightness - b.brightness);
+        JSONArray arr = new JSONArray();
+        for (BrightnessProfile p : profiles) {
+            arr.put(p.toJSONObject());
+        }
+        prefs.edit().putString(KEY_BRIGHTNESS_PROFILES, arr.toString()).commit();
+    }
+
+    /** 添加或更新一个亮度配置（相同亮度则更新） */
+    public void addOrUpdateBrightnessProfile(BrightnessProfile profile) {
+        List<BrightnessProfile> profiles = getBrightnessProfiles();
+        boolean updated = false;
+        for (int i = 0; i < profiles.size(); i++) {
+            if (profiles.get(i).brightness == profile.brightness) {
+                profiles.set(i, profile);
+                updated = true;
+                break;
+            }
+        }
+        if (!updated) profiles.add(profile);
+        saveBrightnessProfiles(profiles);
+    }
+
+    /** 删除指定亮度的配置 */
+    public void removeBrightnessProfile(int brightness) {
+        List<BrightnessProfile> profiles = getBrightnessProfiles();
+        profiles.removeIf(p -> p.brightness == brightness);
+        saveBrightnessProfiles(profiles);
+    }
 
     public void resetDefaults() { prefs.edit().clear().commit(); }
 }

@@ -31,4 +31,9 @@
     <string name="status_unfolded">已展开 - 校正运行中</string>
     <string name="status_folded">已折叠 - 校正暂停</string>
     <string name="status_disabled">服务已关闭</string>
+    <string name="brightness_profiles_title">亮度校色配置</string>
+    <string name="current_brightness">当前亮度: %1$d%%</string>
+    <string name="brightness_profile_hint">设置好颜色和透明度后，点击保存为亮度配置。有配置时，覆盖层会随亮度变化自动插值调整。</string>
+    <string name="brightness_profile_active">已有 %1$d 个亮度配置点，覆盖层会根据亮度自动插值调整颜色和透明度</string>
+    <string name="add_brightness_profile">保存为亮度配置</string>
 </resources>
