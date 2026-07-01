@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">色差校正</string>
+    <string name="settings_title">色差校正设置</string>
+    <string name="service_running">校正服务运行中</string>
+    <string name="service_stopped">校正服务已停止</string>
+    <string name="overlay_enabled">启用悬浮校正</string>
+    <string name="overlay_disabled">关闭悬浮校正</string>
+    <string name="auto_fold_detect">自动折叠检测</string>
+    <string name="auto_fold_detect_summary">展开时自动启用校正，折叠时自动关闭</string>
+    <string name="left_screen_color">左屏覆盖色</string>
+    <string name="right_screen_color">右屏覆盖色</string>
+    <string name="overlay_opacity">透明度</string>
+    <string name="overlay_mode">覆盖模式</string>
+    <string name="mode_half_screen">半屏模式</string>
+    <string name="mode_custom_area">自定义区域</string>
+    <string name="overlay_area">覆盖区域</string>
+    <string name="notification_channel">色差校正服务</string>
+    <string name="notification_title">色差校正</string>
+    <string name="notification_text">校正覆盖层正在运行</string>
+    <string name="permission_required">需要悬浮窗权限</string>
+    <string name="permission_desc">此应用需要悬浮窗权限才能在其他应用上方显示校正覆盖层</string>
+    <string name="go_to_settings">前往设置</string>
+    <string name="color_preview">颜色预览</string>
+    <string name="reset_defaults">恢复默认</string>
+    <string name="custom_left">左侧区域</string>
+    <string name="custom_right">右侧区域</string>
+    <string name="fold_status">折叠状态</string>
+    <string name="status_unfolded">已展开 - 校正运行中</string>
+    <string name="status_folded">已折叠 - 校正暂停</string>
+    <string name="status_disabled">服务已关闭</string>
+</resources>

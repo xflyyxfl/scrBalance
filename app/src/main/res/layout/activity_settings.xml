@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/colorPrimary"
+        android:titleTextColor="@android:color/white"
+        android:title="@string/settings_title" />
+
+    <!-- Opacity -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/overlay_opacity" android:textSize="16sp" android:textStyle="bold" android:layout_marginTop="16dp"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+        <SeekBar android:id="@+id/opacitySeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <TextView android:id="@+id/opacityValue" android:layout_width="60dp" android:layout_height="wrap_content" android:gravity="center"/>
+    </LinearLayout>
+
+    <!-- Mode -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/overlay_mode" android:textSize="16sp" android:textStyle="bold" android:layout_marginTop="16dp"/>
+    <RadioGroup android:id="@+id/modeRadioGroup" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+        <RadioButton android:id="@+id/halfScreenRadio" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/mode_half_screen"/>
+        <RadioButton android:id="@+id/customAreaRadio" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/mode_custom_area"/>
+    </RadioGroup>
+
+    <!-- Auto Fold -->
+    <CheckBox android:id="@+id/autoFoldCheckbox" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/auto_fold_detect" android:layout_marginTop="12dp"/>
+
+    <!-- Left Color -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/left_screen_color" android:textSize="16sp" android:textStyle="bold" android:layout_marginTop="16dp"/>
+    <TextView android:id="@+id/leftColorPreview" android:layout_width="match_parent" android:layout_height="40dp" android:gravity="center" android:textColor="@android:color/white" android:textSize="12sp"/>
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="R"/>
+    <SeekBar android:id="@+id/leftRedSeekBar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="G"/>
+    <SeekBar android:id="@+id/leftGreenSeekBar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="B"/>
+    <SeekBar android:id="@+id/leftBlueSeekBar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+    <!-- Right Color -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/right_screen_color" android:textSize="16sp" android:textStyle="bold" android:layout_marginTop="16dp"/>
+    <TextView android:id="@+id/rightColorPreview" android:layout_width="match_parent" android:layout_height="40dp" android:gravity="center" android:textColor="@android:color/white" android:textSize="12sp"/>
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="R"/>
+    <SeekBar android:id="@+id/rightRedSeekBar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="G"/>
+    <SeekBar android:id="@+id/rightGreenSeekBar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="B"/>
+    <SeekBar android:id="@+id/rightBlueSeekBar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+    <!-- Custom Area Section -->
+    <LinearLayout android:id="@+id/customAreaSection" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:visibility="gone">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/overlay_area" android:textSize="16sp" android:textStyle="bold" android:layout_marginTop="16dp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/custom_left" android:textStyle="bold"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="起%"/>
+            <SeekBar android:id="@+id/customLeftStartBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            <TextView android:id="@+id/customLeftStartValue" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="终%"/>
+            <SeekBar android:id="@+id/customLeftEndBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            <TextView android:id="@+id/customLeftEndValue" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center"/>
+        </LinearLayout>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/custom_right" android:textStyle="bold"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="起%"/>
+            <SeekBar android:id="@+id/customRightStartBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            <TextView android:id="@+id/customRightStartValue" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="终%"/>
+            <SeekBar android:id="@+id/customRightEndBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            <TextView android:id="@+id/customRightEndValue" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="上%"/>
+            <SeekBar android:id="@+id/customTopBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            <TextView android:id="@+id/customTopValue" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="下%"/>
+            <SeekBar android:id="@+id/customBottomBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            <TextView android:id="@+id/customBottomValue" android:layout_width="40dp" android:layout_height="wrap_content" android:gravity="center"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <Button android:id="@+id/resetBtn" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/reset_defaults" android:layout_marginTop="24dp"/>
+
+</LinearLayout>
+</ScrollView>
