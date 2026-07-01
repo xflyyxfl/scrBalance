@@ -72,7 +72,7 @@ public class SettingsActivity extends AppCompatActivity {
         sb.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override public void onProgressChanged(SeekBar s, int p, boolean f) {
                 tv.setText(p+"%");
-                if(f) { config.setOpacity(p); notifyOverlayUpdate(); }
+                config.setOpacity(p); notifyOverlayUpdate();
             }
         });
         // +/- 每次调整1%
@@ -130,10 +130,8 @@ public class SettingsActivity extends AppCompatActivity {
                 int c = Color.rgb(rv, gv, bv);
                 rTv.setText(rv+""); gTv.setText(gv+""); bTv.setText(bv+"");
                 prev.setBackgroundColor(c); prev.setText(fmt(c));
-                if(f) {
-                    if(isLeft) config.setLeftColor(0xFF000000|c); else config.setRightColor(0xFF000000|c);
-                    notifyOverlayUpdate();
-                }
+                if(isLeft) config.setLeftColor(0xFF000000|c); else config.setRightColor(0xFF000000|c);
+                notifyOverlayUpdate();
             }
         };
         rB.setOnSeekBarChangeListener(l); gB.setOnSeekBarChangeListener(l); bB.setOnSeekBarChangeListener(l);
@@ -170,7 +168,7 @@ public class SettingsActivity extends AppCompatActivity {
         bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override public void onProgressChanged(SeekBar s, int p, boolean f) {
                 tv.setText(p+"%");
-                if(f) { setter.accept(p); notifyOverlayUpdate(); }
+                setter.accept(p); notifyOverlayUpdate();
             }
         });
     }
