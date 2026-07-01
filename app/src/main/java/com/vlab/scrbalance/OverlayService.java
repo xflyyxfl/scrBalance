@@ -112,22 +112,17 @@ public class OverlayService extends Service {
         int leftWithAlpha = applyAlpha(config.getLeftColor(), opacity);
         int rightWithAlpha = applyAlpha(config.getRightColor(), opacity);
 
-        WindowManager.LayoutParams baseParams = new WindowManager.LayoutParams(
-                0, 0,
-                getOverlayType(),
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-                        WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
-                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
-                        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                PixelFormat.TRANSLUCENT
-        );
-        baseParams.gravity = Gravity.TOP | Gravity.LEFT;
-
         Display display = windowManager.getDefaultDisplay();
         android.graphics.Point realSize = new android.graphics.Point();
         display.getRealSize(realSize);
         int screenWidth = realSize.x;
         int screenHeight = realSize.y;
+
+        int overlayType = getOverlayType();
+        int flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE |
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
 
         if (mode.equals("custom")) {
             int leftStart = config.getCustomLeftStart() * screenWidth / 100;
@@ -139,30 +134,36 @@ public class OverlayService extends Service {
 
             overlayLeftView = new View(this);
             overlayLeftView.setBackgroundColor(leftWithAlpha);
-            WindowManager.LayoutParams lp = new WindowManager.LayoutParams(baseParams);
+            WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+                    leftEnd - leftStart, bottom - top, overlayType, flags, PixelFormat.TRANSLUCENT);
+            lp.gravity = Gravity.TOP | Gravity.LEFT;
             lp.x = leftStart; lp.y = top;
-            lp.width = leftEnd - leftStart; lp.height = bottom - top;
             windowManager.addView(overlayLeftView, lp);
 
             overlayRightView = new View(this);
             overlayRightView.setBackgroundColor(rightWithAlpha);
-            WindowManager.LayoutParams rp = new WindowManager.LayoutParams(baseParams);
+            WindowManager.LayoutParams rp = new WindowManager.LayoutParams(
+                    rightEnd - rightStart, bottom - top, overlayType, flags, PixelFormat.TRANSLUCENT);
+            rp.gravity = Gravity.TOP | Gravity.LEFT;
             rp.x = rightStart; rp.y = top;
-            rp.width = rightEnd - rightStart; rp.height = bottom - top;
             windowManager.addView(overlayRightView, rp);
         } else {
             int halfWidth = screenWidth / 2;
 
             overlayLeftView = new View(this);
             overlayLeftView.setBackgroundColor(leftWithAlpha);
-            WindowManager.LayoutParams lp = new WindowManager.LayoutParams(baseParams);
-            lp.x = 0; lp.y = 0; lp.width = halfWidth; lp.height = screenHeight;
+            WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+                    halfWidth, screenHeight, overlayType, flags, PixelFormat.TRANSLUCENT);
+            lp.gravity = Gravity.TOP | Gravity.LEFT;
+            lp.x = 0; lp.y = 0;
             windowManager.addView(overlayLeftView, lp);
 
             overlayRightView = new View(this);
             overlayRightView.setBackgroundColor(rightWithAlpha);
-            WindowManager.LayoutParams rp = new WindowManager.LayoutParams(baseParams);
-            rp.x = halfWidth; rp.y = 0; rp.width = halfWidth; rp.height = screenHeight;
+            WindowManager.LayoutParams rp = new WindowManager.LayoutParams(
+                    halfWidth, screenHeight, overlayType, flags, PixelFormat.TRANSLUCENT);
+            rp.gravity = Gravity.TOP | Gravity.LEFT;
+            rp.x = halfWidth; rp.y = 0;
             windowManager.addView(overlayRightView, rp);
         }
     }
