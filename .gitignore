@@ -18,6 +18,7 @@ out/
 .gradle/
 build/
 
+
 # Local configuration file
 local.properties
 

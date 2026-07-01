@@ -179,8 +179,10 @@ public class OverlayService extends Service {
     }
 
     private void updateOverlay() {
-        if (foldDetector.isUnfolded()) {
+        if (config.isEnabled() && foldDetector.isUnfolded()) {
             showOverlay();
+        } else {
+            removeOverlay();
         }
     }
 

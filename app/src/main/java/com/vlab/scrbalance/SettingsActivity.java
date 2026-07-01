@@ -1,5 +1,6 @@
 package com.vlab.scrbalance;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.CheckBox;
@@ -14,6 +15,13 @@ import androidx.appcompat.widget.Toolbar;
 public class SettingsActivity extends AppCompatActivity {
 
     private AppConfig config;
+
+    /** 通知OverlayService实时刷新覆盖层 */
+    private void notifyOverlayUpdate() {
+        Intent intent = new Intent(this, OverlayService.class);
+        intent.setAction("ACTION_UPDATE");
+        startService(intent);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,7 +42,7 @@ public class SettingsActivity extends AppCompatActivity {
         initColor(true);
         initColor(false);
         initCustomArea();
-        findViewById(R.id.resetBtn).setOnClickListener(v -> { config.resetDefaults(); recreate(); });
+        findViewById(R.id.resetBtn).setOnClickListener(v -> { config.resetDefaults(); notifyOverlayUpdate(); recreate(); });
     }
 
     private void initOpacity() {
@@ -43,7 +51,7 @@ public class SettingsActivity extends AppCompatActivity {
         sb.setMax(100); sb.setProgress(config.getOpacity());
         tv.setText(config.getOpacity() + "%");
         sb.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
-            @Override public void onProgressChanged(SeekBar s, int p, boolean f) { tv.setText(p+"%"); if(f) config.setOpacity(p); }
+            @Override public void onProgressChanged(SeekBar s, int p, boolean f) { tv.setText(p+"%"); if(f) { config.setOpacity(p); notifyOverlayUpdate(); } }
         });
     }
 
@@ -56,13 +64,14 @@ public class SettingsActivity extends AppCompatActivity {
             boolean c = id == R.id.customAreaRadio;
             config.setMode(c ? "custom" : "half");
             findViewById(R.id.customAreaSection).setVisibility(c ? android.view.View.VISIBLE : android.view.View.GONE);
+            notifyOverlayUpdate();
         });
     }
 
     private void initAutoFold() {
         CheckBox cb = findViewById(R.id.autoFoldCheckbox);
         cb.setChecked(config.isAutoFoldDetect());
-        cb.setOnCheckedChangeListener((b, v) -> config.setAutoFoldDetect(v));
+        cb.setOnCheckedChangeListener((b, v) -> { config.setAutoFoldDetect(v); notifyOverlayUpdate(); });
     }
 
     private void initColor(boolean isLeft) {
@@ -85,7 +94,7 @@ public class SettingsActivity extends AppCompatActivity {
             @Override public void onProgressChanged(SeekBar s, int p, boolean f) {
                 int c = Color.rgb(rB.getProgress(), gB.getProgress(), bB.getProgress());
                 prev.setBackgroundColor(c); prev.setText(fmt(c));
-                if(f) { if(isLeft) config.setLeftColor(0xFF000000|c); else config.setRightColor(0xFF000000|c); }
+                if(f) { if(isLeft) config.setLeftColor(0xFF000000|c); else config.setRightColor(0xFF000000|c); notifyOverlayUpdate(); }
             }
         };
         rB.setOnSeekBarChangeListener(l); gB.setOnSeekBarChangeListener(l); bB.setOnSeekBarChangeListener(l);
@@ -107,7 +116,7 @@ public class SettingsActivity extends AppCompatActivity {
         TextView tv = findViewById(tvId);
         bar.setMax(100); bar.setProgress(init); tv.setText(init+"%");
         bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
-            @Override public void onProgressChanged(SeekBar s, int p, boolean f) { tv.setText(p+"%"); if(f) setter.accept(p); }
+            @Override public void onProgressChanged(SeekBar s, int p, boolean f) { tv.setText(p+"%"); if(f) { setter.accept(p); notifyOverlayUpdate(); } }
         });
     }
 }
