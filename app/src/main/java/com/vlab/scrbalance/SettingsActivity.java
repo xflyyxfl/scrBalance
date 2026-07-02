@@ -1,13 +1,19 @@
 package com.vlab.scrbalance;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -20,10 +26,12 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import java.io.InputStream;
 import java.util.List;
 
 public class SettingsActivity extends AppCompatActivity {
 
+    private static final int REQUEST_CODE_PICK_IMAGE = 1001;
     private AppConfig config;
 
     /** 通知OverlayService实时刷新覆盖层 */
@@ -64,6 +72,8 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void initAll() {
         initBgColor();
+        initBgImage();
+        initGrayLevel();
         initBrightnessProfiles();
         initOpacity();
         initMode();
@@ -114,6 +124,10 @@ public class SettingsActivity extends AppCompatActivity {
                 prev.setBackgroundColor(c); prev.setText(fmt(c));
                 config.setBgColor(c);
                 applyBgColor(c);
+                // RGB底色变化时同步更新灰度（仅当没有底色图片时）
+                if (config.getBgImageUri() == null) {
+                    updateGrayFromBgColor();
+                }
             }
         };
         rB.setOnSeekBarChangeListener(l); gB.setOnSeekBarChangeListener(l); bB.setOnSeekBarChangeListener(l);
@@ -126,6 +140,8 @@ public class SettingsActivity extends AppCompatActivity {
             config.setBgColor(AppConfig.DEFAULT_BG_COLOR);
             rB.setProgress(255); gB.setProgress(255); bB.setProgress(255);
             applyBgColor(AppConfig.DEFAULT_BG_COLOR);
+            // 重置为白色时同步更新灰度
+            updateGrayFromBgColor();
         });
 
         applyBgColor(bgColor);
@@ -171,6 +187,160 @@ public class SettingsActivity extends AppCompatActivity {
         return (0.299f*r + 0.587f*g + 0.114f*b) / 255f;
     }
 
+    /** 初始化底色图片选择器 */
+    private void initBgImage() {
+        ImageView preview = findViewById(R.id.bgImagePreview);
+        String uriStr = config.getBgImageUri();
+        if (uriStr != null) {
+            try {
+                Uri uri = Uri.parse(uriStr);
+                InputStream is = getContentResolver().openInputStream(uri);
+                Bitmap bmp = BitmapFactory.decodeStream(is);
+                if (is != null) is.close();
+                preview.setImageBitmap(bmp);
+                // 应用图片为ScrollView背景
+                applyBgImage(bmp);
+            } catch (Exception e) {
+                preview.setImageResource(0);
+            }
+        }
+
+        findViewById(R.id.bgPickImageBtn).setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("image/*");
+            startActivityForResult(intent, REQUEST_CODE_PICK_IMAGE);
+        });
+
+        findViewById(R.id.bgRemoveImageBtn).setOnClickListener(v -> {
+            config.setBgImageUri(null);
+            preview.setImageResource(0);
+            // 移除背景图片，恢复RGB底色
+            applyBgColor(config.getBgColor());
+            // 灰度从RGB底色重新计算
+            updateGrayFromBgColor();
+            notifyOverlayUpdate();
+        });
+    }
+
+    /** 处理图片选择结果 */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_PICK_IMAGE && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            if (uri != null) {
+                // 持久化URI权限
+                try {
+                    getContentResolver().takePersistableUriPermission(uri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                } catch (Exception ignored) {}
+
+                config.setBgImageUri(uri.toString());
+
+                ImageView preview = findViewById(R.id.bgImagePreview);
+                try {
+                    InputStream is = getContentResolver().openInputStream(uri);
+                    Bitmap bmp = BitmapFactory.decodeStream(is);
+                    if (is != null) is.close();
+                    preview.setImageBitmap(bmp);
+                    applyBgImage(bmp);
+                    // 从图片计算灰度
+                    int gray = calcBitmapGrayLevel(bmp);
+                    config.setCurrentGrayLevel(gray);
+                    updateGrayDisplay();
+                    notifyOverlayUpdate();
+                } catch (Exception e) {
+                    preview.setImageResource(0);
+                }
+            }
+        }
+    }
+
+    /** 应用图片为ScrollView背景 */
+    private void applyBgImage(Bitmap bmp) {
+        ScrollView sv = findViewById(R.id.settingsScrollView);
+        Drawable d = new BitmapDrawable(getResources(), bmp);
+        sv.setBackground(d);
+        // 根据图片亮度自动调整文字颜色
+        int gray = calcBitmapGrayLevel(bmp);
+        boolean isDarkBg = gray < 40;
+        int textColor = isDarkBg ? 0xFFCCCCCC : 0xFF333333;
+        int hintColor = isDarkBg ? 0xFFAAAAAA : 0xFF888888;
+        LinearLayout root = (LinearLayout) sv.getChildAt(0);
+        applyTextColorRecursive(root, textColor, hintColor);
+    }
+
+    /** 从Bitmap计算平均灰度（降采样避免内存问题） */
+    private int calcBitmapGrayLevel(Bitmap bmp) {
+        int w = bmp.getWidth(), h = bmp.getHeight();
+        // 降采样：最多取200×200的像素
+        int stepX = Math.max(1, w / 200), stepY = Math.max(1, h / 200);
+        long sum = 0, count = 0;
+        for (int y = 0; y < h; y += stepY) {
+            for (int x = 0; x < w; x += stepX) {
+                int pixel = bmp.getPixel(x, y);
+                int r = (pixel >> 16) & 0xFF, g = (pixel >> 8) & 0xFF, b = pixel & 0xFF;
+                float lum = (0.299f * r + 0.587f * g + 0.114f * b) / 255f;
+                sum += Math.round(lum * 100);
+                count++;
+            }
+        }
+        return count > 0 ? (int)(sum / count) : 100;
+    }
+
+    /** 灰度等级描述 */
+    private String grayLabel(int gray) {
+        if (gray >= 90) return "白";
+        if (gray >= 70) return "浅灰";
+        if (gray >= 50) return "灰";
+        if (gray >= 30) return "深灰";
+        if (gray >= 10) return "暗灰";
+        return "黑";
+    }
+
+    /** 初始化灰度等级控件 */
+    private void initGrayLevel() {
+        int gray = config.getCurrentGrayLevel();
+        SeekBar bar = findViewById(R.id.graySeekBar);
+        TextView valTv = findViewById(R.id.grayValue);
+        TextView display = findViewById(R.id.grayLevelDisplay);
+
+        bar.setProgress(gray);
+        valTv.setText(gray + "%");
+        display.setText(getString(R.string.gray_level_current, gray, grayLabel(gray)));
+
+        bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
+            @Override public void onProgressChanged(SeekBar s, int p, boolean f) {
+                valTv.setText(p + "%");
+                display.setText(getString(R.string.gray_level_current, p, grayLabel(p)));
+                config.setCurrentGrayLevel(p);
+                notifyOverlayUpdate();
+            }
+        });
+
+        bindButtons(R.id.grayMinus, R.id.grayPlus, R.id.graySeekBar, R.id.grayValue, 5, 100);
+    }
+
+    /** 更新灰度显示（从RGB底色或图片重算后调用） */
+    private void updateGrayFromBgColor() {
+        int bgColor = config.getBgColor();
+        int gray = (int) Math.round(luminance(bgColor) * 100);
+        config.setCurrentGrayLevel(gray);
+        updateGrayDisplay();
+    }
+
+    /** 同步灰度SeekBar和显示 */
+    private void updateGrayDisplay() {
+        int gray = config.getCurrentGrayLevel();
+        SeekBar bar = findViewById(R.id.graySeekBar);
+        TextView valTv = findViewById(R.id.grayValue);
+        TextView display = findViewById(R.id.grayLevelDisplay);
+        bar.setProgress(gray);
+        valTv.setText(gray + "%");
+        display.setText(getString(R.string.gray_level_current, gray, grayLabel(gray)));
+    }
+
     private void initBrightnessProfiles() {
         // 显示当前亮度
         TextView currentBrightness = findViewById(R.id.currentBrightness);
@@ -184,17 +354,19 @@ public class SettingsActivity extends AppCompatActivity {
         refreshProfileList();
     }
 
-    /** 显示添加亮度配置对话框 - 用SeekBar选择亮度百分比 */
+    /** 显示添加亮度配置对话框 - 用SeekBar选择亮度百分比和灰度 */
     private void showAddProfileDialog() {
         LinearLayout dialogLayout = new LinearLayout(this);
         dialogLayout.setOrientation(LinearLayout.VERTICAL);
         dialogLayout.setPadding(40, 20, 40, 20);
 
-        TextView label = new TextView(this);
-        label.setText("选择亮度百分比(当前: " + getCurrentBrightnessPercent() + "%)");
-        label.setTextSize(14);
-        label.setTextColor(0xFF333333);
-        dialogLayout.addView(label);
+        int currentGray = config.getCurrentGrayLevel();
+
+        TextView brightnessLabel = new TextView(this);
+        brightnessLabel.setText("亮度百分比(当前: " + getCurrentBrightnessPercent() + "%)");
+        brightnessLabel.setTextSize(14);
+        brightnessLabel.setTextColor(0xFF333333);
+        dialogLayout.addView(brightnessLabel);
 
         SeekBar brightnessBar = new SeekBar(this);
         brightnessBar.setMax(100);
@@ -214,15 +386,41 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
+        TextView grayLabel = new TextView(this);
+        grayLabel.setText("灰度等级(当前: " + currentGray + "% " + grayLabel(currentGray) + ")");
+        grayLabel.setTextSize(14);
+        grayLabel.setTextColor(0xFF333333);
+        dialogLayout.addView(grayLabel);
+
+        SeekBar grayBar = new SeekBar(this);
+        grayBar.setMax(100);
+        grayBar.setProgress(currentGray);
+        dialogLayout.addView(grayBar);
+
+        TextView grayValue = new TextView(this);
+        grayValue.setText(currentGray + "% " + grayLabel(currentGray));
+        grayValue.setTextSize(16);
+        grayValue.setGravity(Gravity.CENTER);
+        grayValue.setTextColor(0xFF333333);
+        dialogLayout.addView(grayValue);
+
+        grayBar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
+            @Override public void onProgressChanged(SeekBar s, int p, boolean f) {
+                grayValue.setText(p + "% " + grayLabel(p));
+            }
+        });
+
         new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.add_brightness_profile))
                 .setView(dialogLayout)
                 .setPositiveButton("保存", (d, w) -> {
-                    int selectedPercent = brightnessBar.getProgress();
-                    int brightnessValue255 = (int) Math.round(selectedPercent * 255.0 / 100.0);
-                    // 保存当前设置值作为该亮度下的配置
+                    int selectedBrightnessPercent = brightnessBar.getProgress();
+                    int selectedGray = grayBar.getProgress();
+                    int brightness255 = (int) Math.round(selectedBrightnessPercent * 255.0 / 100.0);
+                    // 保存当前设置值作为该亮度+灰度下的配置
                     BrightnessProfile profile = new BrightnessProfile(
-                            brightnessValue255,
+                            brightness255,
+                            selectedGray,
                             config.getLeftColor(),
                             config.getRightColor(),
                             config.getLeftOpacity(),
@@ -248,45 +446,45 @@ public class SettingsActivity extends AppCompatActivity {
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.setPadding(0, 4, 0, 4);
 
-            // 亮度百分比
+            // 亮度+灰度
             TextView brightnessText = new TextView(this);
-            brightnessText.setText(profile.brightnessPercent() + "%");
-            brightnessText.setTextSize(14);
+            brightnessText.setText(profile.brightnessPercent() + "% · " + profile.grayLevel + "%(" + profile.grayLevelLabel() + ")");
+            brightnessText.setTextSize(13);
             brightnessText.setTextColor(0xFF333333);
-            brightnessText.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.5f));
+            brightnessText.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 2f));
             row.addView(brightnessText);
 
             // 左色预览
             View leftPreview = new View(this);
             leftPreview.setBackgroundColor(applyAlphaPreview(profile.leftColor, profile.leftOpacity));
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(30, 30);
-            lp.setMargins(4, 0, 4, 0);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(24, 24);
+            lp.setMargins(2, 0, 2, 0);
             leftPreview.setLayoutParams(lp);
             row.addView(leftPreview);
 
             // 右色预览
             View rightPreview = new View(this);
             rightPreview.setBackgroundColor(applyAlphaPreview(profile.rightColor, profile.rightOpacity));
-            LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(30, 30);
-            rp.setMargins(4, 0, 8, 0);
+            LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(24, 24);
+            rp.setMargins(2, 0, 4, 0);
             rightPreview.setLayoutParams(rp);
             row.addView(rightPreview);
 
             // 透明度信息
             TextView opacityText = new TextView(this);
             opacityText.setText("L" + profile.leftOpacity + "% R" + profile.rightOpacity + "%");
-            opacityText.setTextSize(12);
+            opacityText.setTextSize(11);
             opacityText.setTextColor(0xFF666666);
-            opacityText.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 2f));
+            opacityText.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.5f));
             row.addView(opacityText);
 
             // 加载按钮（将配置值加载到设置界面）
             Button loadBtn = new Button(this);
             loadBtn.setText("加载");
-            loadBtn.setTextSize(12);
+            loadBtn.setTextSize(11);
             loadBtn.setBackgroundColor(0xFFE0E0E0);
             loadBtn.setTextColor(0xFF333333);
-            LinearLayout.LayoutParams loadLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 32);
+            LinearLayout.LayoutParams loadLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 30);
             loadBtn.setLayoutParams(loadLp);
             loadBtn.setOnClickListener(v -> {
                 config.setLeftColor(profile.leftColor);
@@ -294,21 +492,21 @@ public class SettingsActivity extends AppCompatActivity {
                 config.setLeftOpacity(profile.leftOpacity);
                 config.setRightOpacity(profile.rightOpacity);
                 notifyOverlayUpdate();
-                recreate(); // 重新加载界面以更新控件值
+                recreate();
             });
             row.addView(loadBtn);
 
             // 删除按钮
             Button deleteBtn = new Button(this);
             deleteBtn.setText("删除");
-            deleteBtn.setTextSize(12);
+            deleteBtn.setTextSize(11);
             deleteBtn.setBackgroundColor(0xFFFFCDD2);
             deleteBtn.setTextColor(0xFF333333);
-            LinearLayout.LayoutParams delLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 32);
+            LinearLayout.LayoutParams delLp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, 30);
             delLp.setMargins(4, 0, 0, 0);
             deleteBtn.setLayoutParams(delLp);
             deleteBtn.setOnClickListener(v -> {
-                config.removeBrightnessProfile(profile.brightness);
+                config.removeBrightnessProfile(profile.brightness, profile.grayLevel);
                 refreshProfileList();
                 notifyOverlayUpdate();
             });

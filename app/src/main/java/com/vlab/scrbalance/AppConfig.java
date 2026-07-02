@@ -32,6 +32,8 @@ public class AppConfig {
     private static final String KEY_BRIGHTNESS_PROFILES = "brightness_profiles";
     private static final String KEY_SETTINGS_MODE = "settings_mode";
     private static final String KEY_BG_COLOR = "bg_color";
+    private static final String KEY_BG_IMAGE_URI = "bg_image_uri";
+    private static final String KEY_CURRENT_GRAY_LEVEL = "current_gray_level";
 
     // Defaults
     public static final int DEFAULT_LEFT_COLOR = 0xFFFFE0B2;
@@ -47,6 +49,7 @@ public class AppConfig {
     public static final int DEFAULT_CUSTOM_TOP = 0;
     public static final int DEFAULT_CUSTOM_BOTTOM = 100;
     public static final int DEFAULT_BG_COLOR = 0xFFFFFFFF;
+    public static final int DEFAULT_GRAY_LEVEL = 100; // 默认白色底色→灰度100
 
     private final SharedPreferences prefs;
 
@@ -117,12 +120,12 @@ public class AppConfig {
         prefs.edit().putString(KEY_BRIGHTNESS_PROFILES, arr.toString()).commit();
     }
 
-    /** 添加或更新一个亮度配置（相同亮度则更新） */
+    /** 添加或更新一个亮度配置（相同亮度+灰度则更新） */
     public void addOrUpdateBrightnessProfile(BrightnessProfile profile) {
         List<BrightnessProfile> profiles = getBrightnessProfiles();
         boolean updated = false;
         for (int i = 0; i < profiles.size(); i++) {
-            if (profiles.get(i).brightness == profile.brightness) {
+            if (profiles.get(i).brightness == profile.brightness && profiles.get(i).grayLevel == profile.grayLevel) {
                 profiles.set(i, profile);
                 updated = true;
                 break;
@@ -132,10 +135,10 @@ public class AppConfig {
         saveBrightnessProfiles(profiles);
     }
 
-    /** 删除指定亮度的配置 */
-    public void removeBrightnessProfile(int brightness) {
+    /** 删除指定亮度+灰度的配置 */
+    public void removeBrightnessProfile(int brightness, int grayLevel) {
         List<BrightnessProfile> profiles = getBrightnessProfiles();
-        profiles.removeIf(p -> p.brightness == brightness);
+        profiles.removeIf(p -> p.brightness == brightness && p.grayLevel == grayLevel);
         saveBrightnessProfiles(profiles);
     }
 
@@ -146,6 +149,14 @@ public class AppConfig {
     /** 底色（预览背景色） */
     public int getBgColor() { return prefs.getInt(KEY_BG_COLOR, DEFAULT_BG_COLOR); }
     public void setBgColor(int v) { prefs.edit().putInt(KEY_BG_COLOR, v).commit(); }
+
+    /** 底色图片URI */
+    public String getBgImageUri() { return prefs.getString(KEY_BG_IMAGE_URI, null); }
+    public void setBgImageUri(String v) { prefs.edit().putString(KEY_BG_IMAGE_URI, v).commit(); }
+
+    /** 当前灰度等级（用于运行时2D插值的灰度维度） */
+    public int getCurrentGrayLevel() { return prefs.getInt(KEY_CURRENT_GRAY_LEVEL, DEFAULT_GRAY_LEVEL); }
+    public void setCurrentGrayLevel(int v) { prefs.edit().putInt(KEY_CURRENT_GRAY_LEVEL, v).commit(); }
 
     public void resetDefaults() { prefs.edit().clear().commit(); }
 }

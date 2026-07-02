@@ -39,4 +39,10 @@
     <string name="bg_color">底色（预览背景）</string>
     <string name="bg_color_hint">模拟校正目标屏幕的底色，帮助在对应底色下调试校色效果</string>
     <string name="bg_reset_white">重置为白色</string>
+    <string name="bg_pick_image">选择底色图片</string>
+    <string name="bg_pick_image_hint">截屏后添加为底色图片，可快速预览校色在实际内容上的效果</string>
+    <string name="bg_remove_image">移除底色图片</string>
+    <string name="gray_level">灰度等级</string>
+    <string name="gray_level_hint">底色灰度用于亮度×灰度二维插值，灰度0=纯黑，100=纯白</string>
+    <string name="gray_level_current">当前灰度: %1$d%% (%2$s)</string>
 </resources>

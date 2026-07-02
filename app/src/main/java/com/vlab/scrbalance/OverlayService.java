@@ -155,7 +155,7 @@ public class OverlayService extends Service {
         }
     }
 
-    /** 根据亮度更新覆盖层 - 核心方法 */
+    /** 根据亮度+灰度更新覆盖层 - 核心方法 */
     private void updateOverlayForBrightness() {
         if (!config.isEnabled()) {
             removeOverlay();
@@ -175,53 +175,176 @@ public class OverlayService extends Service {
 
         List<BrightnessProfile> profiles = config.getBrightnessProfiles();
         int currentBrightness = getCurrentBrightness();
+        int currentGrayLevel = config.getCurrentGrayLevel();
 
         if (profiles.isEmpty()) {
             // 无亮度配置，使用直接设置值
             showOverlayWithValues(config.getLeftColor(), config.getRightColor(),
                     config.getLeftOpacity(), config.getRightOpacity());
         } else {
-            // 有亮度配置，进行线性插值
-            int[] interpolated = interpolate(profiles, currentBrightness);
+            // 有配置，进行2D双线性插值
+            int[] interpolated = bilinearInterpolate(profiles, currentBrightness, currentGrayLevel);
             showOverlayWithValues(interpolated[0], interpolated[1], interpolated[2], interpolated[3]);
         }
     }
 
     /**
-     * 线性插值计算
+     * 2D双线性插值（亮度×灰度）
      * 返回 [leftColor, rightColor, leftOpacity, rightOpacity]
+     *
+     * 策略：在profiles中找到包围当前(brightness, grayLevel)的4个点（矩形四角），
+     * 在矩形内做双线性插值。如果数据不足以构成矩形，降级为1D线性插值或直接取最近点。
      */
-    private int[] interpolate(List<BrightnessProfile> profiles, int currentBrightness) {
-        BrightnessProfile lower = null, upper = null;
+    private int[] bilinearInterpolate(List<BrightnessProfile> profiles, int brightness, int grayLevel) {
+        // 寻找4个包围点：(blower,glower), (blower,gupper), (bupper,glower), (bupper,gupper)
+        BrightnessProfile blower = null, bupper = null;
+        int glower = Integer.MAX_VALUE, gupper = Integer.MIN_VALUE;
 
+        // 第一步：找到亮度方向的上下界
         for (BrightnessProfile p : profiles) {
-            if (p.brightness <= currentBrightness) lower = p;
-            if (p.brightness >= currentBrightness && upper == null) upper = p;
+            if (p.brightness <= brightness) {
+                if (blower == null || p.brightness > blower.brightness) blower = p;
+            }
+            if (p.brightness >= brightness) {
+                if (bupper == null || p.brightness < bupper.brightness) bupper = p;
+            }
+        }
+
+        // 第二步：在亮度上下界对应的profiles中，找灰度方向的上下界
+        // 收集所有在亮度范围内的profile的灰度值
+        for (BrightnessProfile p : profiles) {
+            // 只考虑亮度在[blower..bupper]范围内的profiles
+            int bMin = blower != null ? blower.brightness : 0;
+            int bMax = bupper != null ? bupper.brightness : 255;
+            if (p.brightness >= bMin && p.brightness <= bMax) {
+                if (p.grayLevel <= grayLevel && p.grayLevel < glower) glower = p.grayLevel;
+                if (p.grayLevel >= grayLevel && p.grayLevel > gupper) gupper = p.grayLevel;
+            }
+        }
+
+        // 如果没有找到灰度界，说明所有profile的grayLevel相同，降级为1D
+        if (glower == Integer.MAX_VALUE) glower = grayLevel;
+        if (gupper == Integer.MIN_VALUE) gupper = grayLevel;
+
+        // 如果亮度只有一维数据，降级为1D插值
+        if (blower == null && bupper == null) {
+            BrightnessProfile fallback = profiles.get(0);
+            return new int[]{fallback.leftColor, fallback.rightColor, fallback.leftOpacity, fallback.rightOpacity};
+        }
+
+        // 灰度维度相同 → 1D线性插值
+        if (glower == gupper) {
+            return linearInterpolate1D(profiles, brightness, glower);
+        }
+
+        // 亮度维度相同 → 按灰度1D插值
+        if ((blower == null || bupper == null) || blower.brightness == bupper.brightness) {
+            return linearInterpolate1DGray(profiles, grayLevel, blower != null ? blower.brightness : (bupper != null ? bupper.brightness : brightness));
+        }
+
+        // 真正的2D双线性插值：找到4个角点
+        BrightnessProfile p00 = findClosest(profiles, blower.brightness, glower); // 左下
+        BrightnessProfile p01 = findClosest(profiles, blower.brightness, gupper); // 左上
+        BrightnessProfile p10 = findClosest(profiles, bupper.brightness, glower); // 右下
+        BrightnessProfile p11 = findClosest(profiles, bupper.brightness, gupper); // 右上
+
+        // 如果找不到4个角点，降级
+        if (p00 == null || p01 == null || p10 == null || p11 == null) {
+            return linearInterpolate1D(profiles, brightness, glower);
+        }
+
+        float bRatio = (float)(brightness - blower.brightness) / (bupper.brightness - blower.brightness);
+        float gRatio = (float)(grayLevel - glower) / (gupper - glower);
+
+        // 双线性插值：先在亮度方向插值两行，再在灰度方向插值
+        int leftColorLow = interpolateColor(p00.leftColor, p10.leftColor, bRatio);
+        int leftColorHigh = interpolateColor(p01.leftColor, p11.leftColor, bRatio);
+        int leftColor = interpolateColor(leftColorLow, leftColorHigh, gRatio);
+
+        int rightColorLow = interpolateColor(p00.rightColor, p10.rightColor, bRatio);
+        int rightColorHigh = interpolateColor(p01.rightColor, p11.rightColor, bRatio);
+        int rightColor = interpolateColor(rightColorLow, rightColorHigh, gRatio);
+
+        int leftOpLow = (int)Math.round(p00.leftOpacity + bRatio * (p10.leftOpacity - p00.leftOpacity));
+        int leftOpHigh = (int)Math.round(p01.leftOpacity + bRatio * (p11.leftOpacity - p01.leftOpacity));
+        int leftOpacity = (int)Math.round(leftOpLow + gRatio * (leftOpHigh - leftOpLow));
+
+        int rightOpLow = (int)Math.round(p00.rightOpacity + bRatio * (p10.rightOpacity - p00.rightOpacity));
+        int rightOpHigh = (int)Math.round(p01.rightOpacity + bRatio * (p11.rightOpacity - p01.rightOpacity));
+        int rightOpacity = (int)Math.round(rightOpLow + gRatio * (rightOpHigh - rightOpLow));
+
+        return new int[]{leftColor, rightColor, leftOpacity, rightOpacity};
+    }
+
+    /** 在profiles中找到最接近指定(brightness, grayLevel)的profile */
+    private BrightnessProfile findClosest(List<BrightnessProfile> profiles, int brightness, int grayLevel) {
+        BrightnessProfile best = null;
+        float bestDist = Float.MAX_VALUE;
+        for (BrightnessProfile p : profiles) {
+            if (p.brightness == brightness && p.grayLevel == grayLevel) return p;
+            float dist = Math.abs(p.brightness - brightness) + Math.abs(p.grayLevel - grayLevel) * 2.55f;
+            if (dist < bestDist) { bestDist = dist; best = p; }
+        }
+        return best;
+    }
+
+    /** 1D线性插值（仅亮度维度），在指定grayLevel附近找点 */
+    private int[] linearInterpolate1D(List<BrightnessProfile> profiles, int brightness, int grayLevel) {
+        // 优先找grayLevel最接近的profiles做1D插值
+        BrightnessProfile lower = null, upper = null;
+        for (BrightnessProfile p : profiles) {
+            if (p.brightness <= brightness) {
+                if (lower == null || (Math.abs(p.grayLevel - grayLevel) <= Math.abs(lower.grayLevel - grayLevel) && p.brightness >= lower.brightness)) {
+                    lower = p;
+                }
+            }
+            if (p.brightness >= brightness) {
+                if (upper == null || (Math.abs(p.grayLevel - grayLevel) <= Math.abs(upper.grayLevel - grayLevel) && p.brightness <= upper.brightness)) {
+                    upper = p;
+                }
+            }
         }
 
         if (lower == null && upper == null) {
             BrightnessProfile fallback = profiles.get(0);
             return new int[]{fallback.leftColor, fallback.rightColor, fallback.leftOpacity, fallback.rightOpacity};
         }
+        if (lower == null) return new int[]{upper.leftColor, upper.rightColor, upper.leftOpacity, upper.rightOpacity};
+        if (upper == null) return new int[]{lower.leftColor, lower.rightColor, lower.leftOpacity, lower.rightOpacity};
+        if (lower.brightness == upper.brightness) return new int[]{lower.leftColor, lower.rightColor, lower.leftOpacity, lower.rightOpacity};
 
-        if (lower == null) {
-            return new int[]{upper.leftColor, upper.rightColor, upper.leftOpacity, upper.rightOpacity};
-        }
-
-        if (upper == null) {
-            return new int[]{lower.leftColor, lower.rightColor, lower.leftOpacity, lower.rightOpacity};
-        }
-
-        if (lower.brightness == upper.brightness) {
-            return new int[]{lower.leftColor, lower.rightColor, lower.leftOpacity, lower.rightOpacity};
-        }
-
-        float ratio = (float) (currentBrightness - lower.brightness) / (upper.brightness - lower.brightness);
+        float ratio = (float)(brightness - lower.brightness) / (upper.brightness - lower.brightness);
         int leftColor = interpolateColor(lower.leftColor, upper.leftColor, ratio);
         int rightColor = interpolateColor(lower.rightColor, upper.rightColor, ratio);
         int leftOpacity = (int) Math.round(lower.leftOpacity + ratio * (upper.leftOpacity - lower.leftOpacity));
         int rightOpacity = (int) Math.round(lower.rightOpacity + ratio * (upper.rightOpacity - lower.rightOpacity));
+        return new int[]{leftColor, rightColor, leftOpacity, rightOpacity};
+    }
 
+    /** 1D线性插值（仅灰度维度），在指定brightness附近找点 */
+    private int[] linearInterpolate1DGray(List<BrightnessProfile> profiles, int grayLevel, int brightness) {
+        BrightnessProfile lower = null, upper = null;
+        for (BrightnessProfile p : profiles) {
+            if (p.brightness == brightness || Math.abs(p.brightness - brightness) <= 10) {
+                if (p.grayLevel <= grayLevel) {
+                    if (lower == null || p.grayLevel > lower.grayLevel) lower = p;
+                }
+                if (p.grayLevel >= grayLevel) {
+                    if (upper == null || p.grayLevel < upper.grayLevel) upper = p;
+                }
+            }
+        }
+
+        if (lower == null && upper == null) return linearInterpolate1D(profiles, brightness, grayLevel);
+        if (lower == null) return new int[]{upper.leftColor, upper.rightColor, upper.leftOpacity, upper.rightOpacity};
+        if (upper == null) return new int[]{lower.leftColor, lower.rightColor, lower.leftOpacity, lower.rightOpacity};
+        if (lower.grayLevel == upper.grayLevel) return new int[]{lower.leftColor, lower.rightColor, lower.leftOpacity, lower.rightOpacity};
+
+        float ratio = (float)(grayLevel - lower.grayLevel) / (upper.grayLevel - lower.grayLevel);
+        int leftColor = interpolateColor(lower.leftColor, upper.leftColor, ratio);
+        int rightColor = interpolateColor(lower.rightColor, upper.rightColor, ratio);
+        int leftOpacity = (int) Math.round(lower.leftOpacity + ratio * (upper.leftOpacity - lower.leftOpacity));
+        int rightOpacity = (int) Math.round(lower.rightOpacity + ratio * (upper.rightOpacity - lower.rightOpacity));
         return new int[]{leftColor, rightColor, leftOpacity, rightOpacity};
     }
 

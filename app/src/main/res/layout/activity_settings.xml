@@ -71,6 +71,45 @@
     <Button android:id="@+id/bgResetBtn" android:layout_width="match_parent" android:layout_height="36dp"
         android:text="@string/bg_reset_white" android:textSize="13sp"
         android:backgroundTint="#E0E0E0" android:textColor="#333333" android:layout_marginTop="4dp"/>
+    <!-- Background Image -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/bg_pick_image" android:textSize="16sp" android:textStyle="bold"
+        android:textColor="#333333" android:layout_marginTop="12dp"/>
+    <TextView android:id="@+id/bgPickImageHint" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/bg_pick_image_hint" android:textSize="13sp"
+        android:textColor="#888888" android:layout_marginTop="2dp"/>
+    <ImageView android:id="@+id/bgImagePreview" android:layout_width="match_parent" android:layout_height="120dp"
+        android:scaleType="centerCrop" android:layout_marginTop="4dp"
+        android:background="#E0E0E0"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginTop="4dp">
+        <Button android:id="@+id/bgPickImageBtn" android:layout_width="0dp" android:layout_height="36dp"
+            android:layout_weight="1" android:text="@string/bg_pick_image" android:textSize="13sp"
+            android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <Button android:id="@+id/bgRemoveImageBtn" android:layout_width="0dp" android:layout_height="36dp"
+            android:layout_weight="1" android:text="@string/bg_remove_image" android:textSize="13sp"
+            android:backgroundTint="#FFCDD2" android:textColor="#333333"/>
+    </LinearLayout>
+    <!-- Gray Level -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/gray_level" android:textSize="16sp" android:textStyle="bold"
+        android:textColor="#333333" android:layout_marginTop="12dp"/>
+    <TextView android:id="@+id/grayLevelHint" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/gray_level_hint" android:textSize="13sp"
+        android:textColor="#888888" android:layout_marginTop="2dp"/>
+    <TextView android:id="@+id/grayLevelDisplay" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textSize="15sp" android:textColor="#333333" android:layout_marginTop="4dp"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="4dp">
+        <Button android:id="@+id/grayMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <SeekBar android:id="@+id/graySeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:max="100"/>
+        <Button android:id="@+id/grayPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/grayValue" android:layout_width="40dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
+    </LinearLayout>
 
     <!-- Brightness Profiles -->
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
