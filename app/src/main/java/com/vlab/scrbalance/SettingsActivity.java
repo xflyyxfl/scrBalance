@@ -12,7 +12,9 @@ import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
+import android.view.ViewGroup;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -61,6 +63,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void initAll() {
+        initBgColor();
         initBrightnessProfiles();
         initOpacity();
         initMode();
@@ -88,6 +91,84 @@ public class SettingsActivity extends AppCompatActivity {
         } catch (Exception e) {
             return 128;
         }
+    }
+
+    /** 初始化底色设置 - 改变设置页面背景模拟目标屏幕底色 */
+    private void initBgColor() {
+        int bgColor = config.getBgColor();
+        SeekBar rB = findViewById(R.id.bgRedSeekBar), gB = findViewById(R.id.bgGreenSeekBar), bB = findViewById(R.id.bgBlueSeekBar);
+        TextView prev = findViewById(R.id.bgColorPreview);
+        TextView rTv = findViewById(R.id.bgRedValue), gTv = findViewById(R.id.bgGreenValue), bTv = findViewById(R.id.bgBlueValue);
+
+        int r = (bgColor>>16)&0xFF, g = (bgColor>>8)&0xFF, b = bgColor&0xFF;
+        rB.setMax(255); rB.setProgress(r); rTv.setText(r+"");
+        gB.setMax(255); gB.setProgress(g); gTv.setText(g+"");
+        bB.setMax(255); bB.setProgress(b); bTv.setText(b+"");
+        prev.setBackgroundColor(bgColor); prev.setText(fmt(bgColor));
+
+        SeekBar.OnSeekBarChangeListener l = new SimpleSeekBarListener() {
+            @Override public void onProgressChanged(SeekBar s, int p, boolean f) {
+                int rv = rB.getProgress(), gv = gB.getProgress(), bv = bB.getProgress();
+                int c = 0xFF000000 | Color.rgb(rv, gv, bv);
+                rTv.setText(rv+""); gTv.setText(gv+""); bTv.setText(bv+"");
+                prev.setBackgroundColor(c); prev.setText(fmt(c));
+                config.setBgColor(c);
+                applyBgColor(c);
+            }
+        };
+        rB.setOnSeekBarChangeListener(l); gB.setOnSeekBarChangeListener(l); bB.setOnSeekBarChangeListener(l);
+
+        bindButtons(R.id.bgRedMinus, R.id.bgRedPlus, R.id.bgRedSeekBar, R.id.bgRedValue, 5, 255);
+        bindButtons(R.id.bgGreenMinus, R.id.bgGreenPlus, R.id.bgGreenSeekBar, R.id.bgGreenValue, 5, 255);
+        bindButtons(R.id.bgBlueMinus, R.id.bgBluePlus, R.id.bgBlueSeekBar, R.id.bgBlueValue, 5, 255);
+
+        findViewById(R.id.bgResetBtn).setOnClickListener(v -> {
+            config.setBgColor(AppConfig.DEFAULT_BG_COLOR);
+            rB.setProgress(255); gB.setProgress(255); bB.setProgress(255);
+            applyBgColor(AppConfig.DEFAULT_BG_COLOR);
+        });
+
+        applyBgColor(bgColor);
+    }
+
+    /** 应用底色到ScrollView背景 */
+    private void applyBgColor(int bgColor) {
+        ScrollView sv = findViewById(R.id.settingsScrollView);
+        sv.setBackgroundColor(bgColor);
+        // 根据底色亮度自动调整文字颜色，保证可读性
+        boolean isDarkBg = luminance(bgColor) < 0.4f;
+        int textColor = isDarkBg ? 0xFFCCCCCC : 0xFF333333;
+        int hintColor = isDarkBg ? 0xFFAAAAAA : 0xFF888888;
+        // 遍历所有TextView设置文字颜色
+        LinearLayout root = (LinearLayout) sv.getChildAt(0);
+        applyTextColorRecursive(root, textColor, hintColor);
+    }
+
+    /** 递归设置所有TextView的文字颜色 */
+    private void applyTextColorRecursive(View view, int textColor, int hintColor) {
+        if (view instanceof TextView) {
+            TextView tv = (TextView) view;
+            // 保留预览框的白色文字
+            int id = tv.getId();
+            if (id == R.id.leftColorPreview || id == R.id.rightColorPreview || id == R.id.bgColorPreview) {
+                tv.setTextColor(0xFFFFFFFF);
+            } else if (id == R.id.bgColorHint || id == R.id.brightnessHint || id == R.id.currentBrightness) {
+                tv.setTextColor(hintColor);
+            } else {
+                tv.setTextColor(textColor);
+            }
+        } else if (view instanceof LinearLayout || view instanceof RadioGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                applyTextColorRecursive(group.getChildAt(i), textColor, hintColor);
+            }
+        }
+    }
+
+    /** 计算颜色亮度 */
+    private float luminance(int color) {
+        int r = (color>>16)&0xFF, g = (color>>8)&0xFF, b = color&0xFF;
+        return (0.299f*r + 0.587f*g + 0.114f*b) / 255f;
     }
 
     private void initBrightnessProfiles() {

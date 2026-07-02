@@ -31,6 +31,7 @@ public class AppConfig {
     private static final String KEY_CUSTOM_BOTTOM = "custom_bottom";
     private static final String KEY_BRIGHTNESS_PROFILES = "brightness_profiles";
     private static final String KEY_SETTINGS_MODE = "settings_mode";
+    private static final String KEY_BG_COLOR = "bg_color";
 
     // Defaults
     public static final int DEFAULT_LEFT_COLOR = 0xFFFFE0B2;
@@ -45,6 +46,7 @@ public class AppConfig {
     public static final int DEFAULT_CUSTOM_RIGHT_END = 100;
     public static final int DEFAULT_CUSTOM_TOP = 0;
     public static final int DEFAULT_CUSTOM_BOTTOM = 100;
+    public static final int DEFAULT_BG_COLOR = 0xFFFFFFFF;
 
     private final SharedPreferences prefs;
 
@@ -140,6 +142,10 @@ public class AppConfig {
     /** 设置模式标志：当用户在校色设置界面时暂停亮度插值，直接使用手动设置值 */
     public boolean isSettingsMode() { return prefs.getBoolean(KEY_SETTINGS_MODE, false); }
     public void setSettingsMode(boolean v) { prefs.edit().putBoolean(KEY_SETTINGS_MODE, v).commit(); }
+
+    /** 底色（预览背景色） */
+    public int getBgColor() { return prefs.getInt(KEY_BG_COLOR, DEFAULT_BG_COLOR); }
+    public void setBgColor(int v) { prefs.edit().putInt(KEY_BG_COLOR, v).commit(); }
 
     public void resetDefaults() { prefs.edit().clear().commit(); }
 }

@@ -36,4 +36,7 @@
     <string name="brightness_profile_hint">设置好颜色和透明度后，点击保存为亮度配置。有配置时，覆盖层会随亮度变化自动插值调整。</string>
     <string name="brightness_profile_active">已有 %1$d 个亮度配置点，覆盖层会根据亮度自动插值调整颜色和透明度</string>
     <string name="add_brightness_profile">保存为亮度配置</string>
+    <string name="bg_color">底色（预览背景）</string>
+    <string name="bg_color_hint">模拟校正目标屏幕的底色，帮助在对应底色下调试校色效果</string>
+    <string name="bg_reset_white">重置为白色</string>
 </resources>

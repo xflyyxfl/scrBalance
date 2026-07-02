@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/settingsScrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFFFFF">
@@ -17,6 +18,59 @@
         android:background="@color/colorPrimary"
         android:titleTextColor="@android:color/white"
         android:title="@string/settings_title" />
+
+    <!-- Background Color -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/bg_color" android:textSize="16sp" android:textStyle="bold"
+        android:textColor="#333333" android:layout_marginTop="16dp"/>
+    <TextView android:id="@+id/bgColorHint" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/bg_color_hint" android:textSize="13sp"
+        android:textColor="#888888" android:layout_marginTop="4dp"/>
+    <TextView android:id="@+id/bgColorPreview" android:layout_width="match_parent" android:layout_height="40dp"
+        android:gravity="center" android:textColor="@android:color/white" android:textSize="12sp"
+        android:layout_marginTop="4dp" android:layout_marginBottom="4dp"/>
+    <!-- R -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/bgRedMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="R"
+            android:textColor="#333333" android:textSize="14sp" android:gravity="center"/>
+        <SeekBar android:id="@+id/bgRedSeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <Button android:id="@+id/bgRedPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/bgRedValue" android:layout_width="36dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
+    </LinearLayout>
+    <!-- G -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/bgGreenMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="G"
+            android:textColor="#333333" android:textSize="14sp" android:gravity="center"/>
+        <SeekBar android:id="@+id/bgGreenSeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <Button android:id="@+id/bgGreenPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/bgGreenValue" android:layout_width="36dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
+    </LinearLayout>
+    <!-- B -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical">
+        <Button android:id="@+id/bgBlueMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:layout_width="20dp" android:layout_height="wrap_content" android:text="B"
+            android:textColor="#333333" android:textSize="14sp" android:gravity="center"/>
+        <SeekBar android:id="@+id/bgBlueSeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+        <Button android:id="@+id/bgBluePlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/bgBlueValue" android:layout_width="36dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
+    </LinearLayout>
+    <Button android:id="@+id/bgResetBtn" android:layout_width="match_parent" android:layout_height="36dp"
+        android:text="@string/bg_reset_white" android:textSize="13sp"
+        android:backgroundTint="#E0E0E0" android:textColor="#333333" android:layout_marginTop="4dp"/>
 
     <!-- Brightness Profiles -->
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
