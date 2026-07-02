@@ -1,4 +1,4 @@
-name: Build APK
+name: Build and Deploy Debug APK
 
 on:
   push:
@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ master ]
   workflow_dispatch:
+
+permissions:
+  contents: write  # 创建Release需要写权限
 
 jobs:
   build:
@@ -30,23 +33,24 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
-      # Release build commented out - no signing certificate configured
+      # Release构建已注释 - 未配置签名证书
+      # 如需启用：1) 配置签名keystore  2) 取消下方注释  3) 添加Upload Release APK步骤
       # - name: Build Release APK
       #   run: ./gradlew assembleRelease
 
-      - name: Upload Debug APK
+      - name: Upload Debug APK (Artifact)
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
           path: app/build/outputs/apk/debug/*.apk
 
-      # - name: Upload Release APK
+      # - name: Upload Release APK (Artifact)
       #   uses: actions/upload-artifact@v4
       #   with:
       #     name: release-apk
       #     path: app/build/outputs/apk/release/*.apk
 
-      - name: Create Release and Upload Debug APK
+      - name: Create GitHub Release & Upload Debug APK
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
