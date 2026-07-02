@@ -9,6 +9,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -71,6 +72,8 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void initAll() {
+        // 保存基准屏幕尺寸（用于旋转检测的参考点）
+        saveRefScreenSize();
         initBgColor();
         initBgImage();
         initGrayLevel();
@@ -81,7 +84,19 @@ public class SettingsActivity extends AppCompatActivity {
         initColor(true);
         initColor(false);
         initCustomArea();
+        initSplitOverlap();
+        initPortraitDirection();
+        initLandscapeSwap();
         findViewById(R.id.resetBtn).setOnClickListener(v -> { config.resetDefaults(); notifyOverlayUpdate(); recreate(); });
+    }
+
+    /** 保存当前屏幕尺寸作为旋转检测的基准参考 */
+    private void saveRefScreenSize() {
+        Display display = getWindowManager().getDefaultDisplay();
+        android.graphics.Point size = new android.graphics.Point();
+        display.getRealSize(size);
+        config.setRefScreenW(size.x);
+        config.setRefScreenH(size.y);
     }
 
     /** 获取当前屏幕亮度百分比 */
@@ -671,6 +686,52 @@ public class SettingsActivity extends AppCompatActivity {
                 tv.setText(p+"%");
                 setter.accept(p); notifyOverlayUpdate();
             }
+        });
+    }
+
+    /** 初始化边界重叠控件 */
+    private void initSplitOverlap() {
+        int overlap = config.getSplitOverlap();
+        SeekBar bar = findViewById(R.id.overlapSeekBar);
+        TextView valTv = findViewById(R.id.overlapValue);
+
+        bar.setMax(50); bar.setProgress(overlap);
+        valTv.setText(String.format("%.1f%%", overlap / 10f));
+
+        bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
+            @Override public void onProgressChanged(SeekBar s, int p, boolean f) {
+                valTv.setText(String.format("%.1f%%", p / 10f));
+                config.setSplitOverlap(p);
+                notifyOverlayUpdate();
+            }
+        });
+
+        bindButtons(R.id.overlapMinus, R.id.overlapPlus, R.id.overlapSeekBar, R.id.overlapValue, 1, 50);
+    }
+
+    /** 初始化竖屏旋转方向控件 */
+    private void initPortraitDirection() {
+        RadioGroup rg = findViewById(R.id.portraitDirectionGroup);
+        String dir = config.getPortraitDirection();
+        ((RadioButton) findViewById(dir.equals("cw") ? R.id.portraitCwRadio : R.id.portraitCcwRadio)).setChecked(true);
+        rg.setOnCheckedChangeListener((g, id) -> {
+            config.setPortraitDirection(id == R.id.portraitCwRadio ? "cw" : "ccw");
+            notifyOverlayUpdate();
+        });
+    }
+
+    /** 初始化横屏左右互换控件 */
+    private void initLandscapeSwap() {
+        RadioGroup rg = findViewById(R.id.landscapeSwapGroup);
+        String swap = config.getLandscapeSwap();
+        int checkedId = swap.equals("swap") ? R.id.landscapeSwapRadio :
+                        swap.equals("normal") ? R.id.landscapeNormalRadio : R.id.landscapeAutoRadio;
+        ((RadioButton) findViewById(checkedId)).setChecked(true);
+        rg.setOnCheckedChangeListener((g, id) -> {
+            String val = id == R.id.landscapeSwapRadio ? "swap" :
+                         id == R.id.landscapeNormalRadio ? "normal" : "auto";
+            config.setLandscapeSwap(val);
+            notifyOverlayUpdate();
         });
     }
 }

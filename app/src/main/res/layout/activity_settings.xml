@@ -111,6 +111,61 @@
             android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
     </LinearLayout>
 
+    <!-- Split Overlap -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/split_overlap" android:textSize="16sp" android:textStyle="bold"
+        android:textColor="#333333" android:layout_marginTop="16dp"/>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/split_overlap_hint" android:textSize="13sp"
+        android:textColor="#888888" android:layout_marginTop="2dp"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="4dp">
+        <Button android:id="@+id/overlapMinus" android:text="−" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0.1%"
+            android:textColor="#888888" android:textSize="11sp" android:layout_marginStart="2dp"/>
+        <SeekBar android:id="@+id/overlapSeekBar" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:max="50"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0.1%"
+            android:textColor="#888888" android:textSize="11sp" android:layout_marginEnd="2dp"/>
+        <Button android:id="@+id/overlapPlus" android:text="+" android:layout_width="44dp" android:layout_height="36dp"
+            android:textSize="18sp" android:gravity="center" android:backgroundTint="#E0E0E0" android:textColor="#333333"/>
+        <TextView android:id="@+id/overlapValue" android:layout_width="50dp" android:layout_height="wrap_content"
+            android:gravity="center" android:textColor="#333333" android:textSize="13sp"/>
+    </LinearLayout>
+
+    <!-- Portrait Direction -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/portrait_direction" android:textSize="16sp" android:textStyle="bold"
+        android:textColor="#333333" android:layout_marginTop="16dp"/>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/portrait_direction_hint" android:textSize="13sp"
+        android:textColor="#888888" android:layout_marginTop="2dp"/>
+    <RadioGroup android:id="@+id/portraitDirectionGroup" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginTop="4dp">
+        <RadioButton android:id="@+id/portraitCwRadio" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="@string/portrait_cw" android:textColor="#333333"/>
+        <RadioButton android:id="@+id/portraitCcwRadio" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="@string/portrait_ccw" android:textColor="#333333"/>
+    </RadioGroup>
+
+    <!-- Landscape Swap -->
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/landscape_swap" android:textSize="16sp" android:textStyle="bold"
+        android:textColor="#333333" android:layout_marginTop="16dp"/>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/landscape_swap_hint" android:textSize="13sp"
+        android:textColor="#888888" android:layout_marginTop="2dp"/>
+    <RadioGroup android:id="@+id/landscapeSwapGroup" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:layout_marginTop="4dp">
+        <RadioButton android:id="@+id/landscapeAutoRadio" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="@string/landscape_swap_auto" android:textColor="#333333"/>
+        <RadioButton android:id="@+id/landscapeNormalRadio" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="@string/landscape_swap_normal" android:textColor="#333333"/>
+        <RadioButton android:id="@+id/landscapeSwapRadio" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="@string/landscape_swap_swap" android:textColor="#333333"/>
+    </RadioGroup>
+
     <!-- Brightness Profiles -->
     <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
         android:text="@string/brightness_profiles_title" android:textSize="16sp" android:textStyle="bold"

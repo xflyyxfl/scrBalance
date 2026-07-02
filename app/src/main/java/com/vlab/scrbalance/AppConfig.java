@@ -34,6 +34,11 @@ public class AppConfig {
     private static final String KEY_BG_COLOR = "bg_color";
     private static final String KEY_BG_IMAGE_URI = "bg_image_uri";
     private static final String KEY_CURRENT_GRAY_LEVEL = "current_gray_level";
+    private static final String KEY_SPLIT_OVERLAP = "split_overlap";  // 半屏边界重叠(0-50=0.0%-5.0%)
+    private static final String KEY_PORTRAIT_DIRECTION = "portrait_direction"; // 竖屏旋转方向: cw/ccw
+    private static final String KEY_REF_SCREEN_W = "ref_screen_w"; // 设置时的基准屏幕宽度
+    private static final String KEY_REF_SCREEN_H = "ref_screen_h"; // 设置时的基准屏幕高度
+    private static final String KEY_LANDSCAPE_SWAP = "landscape_swap"; // 横屏左右互换: auto/normal/swap
 
     // Defaults
     public static final int DEFAULT_LEFT_COLOR = 0xFFFFE0B2;
@@ -50,6 +55,11 @@ public class AppConfig {
     public static final int DEFAULT_CUSTOM_BOTTOM = 100;
     public static final int DEFAULT_BG_COLOR = 0xFFFFFFFF;
     public static final int DEFAULT_GRAY_LEVEL = 100; // 默认白色底色→灰度100
+    public static final int DEFAULT_SPLIT_OVERLAP = 3; // 0.3%重叠消除边界缝隙
+    public static final String DEFAULT_PORTRAIT_DIRECTION = "cw"; // 竖屏时左屏在下方(CW旋转)
+    public static final int DEFAULT_REF_SCREEN_W = 0; // 0表示尚未保存基准
+    public static final int DEFAULT_REF_SCREEN_H = 0;
+    public static final String DEFAULT_LANDSCAPE_SWAP = "auto"; // 自动判断，fallback为normal(左屏在左)
 
     private final SharedPreferences prefs;
 
@@ -157,6 +167,26 @@ public class AppConfig {
     /** 当前灰度等级（用于运行时2D插值的灰度维度） */
     public int getCurrentGrayLevel() { return prefs.getInt(KEY_CURRENT_GRAY_LEVEL, DEFAULT_GRAY_LEVEL); }
     public void setCurrentGrayLevel(int v) { prefs.edit().putInt(KEY_CURRENT_GRAY_LEVEL, v).commit(); }
+
+    /** 半屏边界重叠(0-50，代表0.0%-5.0%，每个单位=0.1%) */
+    public int getSplitOverlap() { return prefs.getInt(KEY_SPLIT_OVERLAP, DEFAULT_SPLIT_OVERLAP); }
+    public void setSplitOverlap(int v) { prefs.edit().putInt(KEY_SPLIT_OVERLAP, v).commit(); }
+
+    /** 竖屏旋转方向: cw(左屏在下) / ccw(左屏在上) */
+    public String getPortraitDirection() { return prefs.getString(KEY_PORTRAIT_DIRECTION, DEFAULT_PORTRAIT_DIRECTION); }
+    public void setPortraitDirection(String v) { prefs.edit().putString(KEY_PORTRAIT_DIRECTION, v).commit(); }
+
+    /** 基准屏幕宽度（用户设置时保存，用于旋转检测） */
+    public int getRefScreenW() { return prefs.getInt(KEY_REF_SCREEN_W, DEFAULT_REF_SCREEN_W); }
+    public void setRefScreenW(int v) { prefs.edit().putInt(KEY_REF_SCREEN_W, v).commit(); }
+
+    /** 基准屏幕高度 */
+    public int getRefScreenH() { return prefs.getInt(KEY_REF_SCREEN_H, DEFAULT_REF_SCREEN_H); }
+    public void setRefScreenH(int v) { prefs.edit().putInt(KEY_REF_SCREEN_H, v).commit(); }
+
+    /** 横屏左右互换: auto(自动判断)/normal(左屏在左)/swap(左屏在右) */
+    public String getLandscapeSwap() { return prefs.getString(KEY_LANDSCAPE_SWAP, DEFAULT_LANDSCAPE_SWAP); }
+    public void setLandscapeSwap(String v) { prefs.edit().putString(KEY_LANDSCAPE_SWAP, v).commit(); }
 
     public void resetDefaults() { prefs.edit().clear().commit(); }
 }
