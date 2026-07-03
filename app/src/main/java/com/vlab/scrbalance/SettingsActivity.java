@@ -9,7 +9,6 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -72,8 +71,6 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void initAll() {
-        // 保存基准屏幕尺寸（用于旋转检测的参考点）
-        saveRefScreenSize();
         initBgColor();
         initBgImage();
         initGrayLevel();
@@ -84,19 +81,9 @@ public class SettingsActivity extends AppCompatActivity {
         initColor(true);
         initColor(false);
         initCustomArea();
-        initSplitOverlap();
-        initPortraitDirection();
-        initLandscapeSwap();
+        initSplitPosition();
+        initOverlayDirection();
         findViewById(R.id.resetBtn).setOnClickListener(v -> { config.resetDefaults(); notifyOverlayUpdate(); recreate(); });
-    }
-
-    /** 保存当前屏幕尺寸作为旋转检测的基准参考 */
-    private void saveRefScreenSize() {
-        Display display = getWindowManager().getDefaultDisplay();
-        android.graphics.Point size = new android.graphics.Point();
-        display.getRealSize(size);
-        config.setRefScreenW(size.x);
-        config.setRefScreenH(size.y);
     }
 
     /** 获取当前屏幕亮度百分比 */
@@ -553,6 +540,7 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         config.setSettingsMode(true); // 暂停亮度插值，让用户手动调整生效
+        notifyOverlayUpdate(); // 立即让overlay切换到手动值模式
         // 更新当前亮度显示
         TextView currentBrightness = findViewById(R.id.currentBrightness);
         int brightnessPercent = getCurrentBrightnessPercent();
@@ -689,49 +677,52 @@ public class SettingsActivity extends AppCompatActivity {
         });
     }
 
-    /** 初始化边界重叠控件 */
-    private void initSplitOverlap() {
-        int overlap = config.getSplitOverlap();
-        SeekBar bar = findViewById(R.id.overlapSeekBar);
-        TextView valTv = findViewById(R.id.overlapValue);
+    /** 初始化分割位置控件（粗调1% + 细调0.05%=1px@2000px屏幕） */
+    private void initSplitPosition() {
+        int pos = config.getSplitPosition(); // 0-2000, 1000=50%
+        SeekBar bar = findViewById(R.id.splitPositionSeekBar);
+        TextView valTv = findViewById(R.id.splitPositionValue);
 
-        bar.setMax(50); bar.setProgress(overlap);
-        valTv.setText(String.format("%.1f%%", overlap / 10f));
+        bar.setMax(2000); bar.setProgress(pos);
+        valTv.setText(String.format("%.2f%%", pos / 20f));
 
         bar.setOnSeekBarChangeListener(new SimpleSeekBarListener() {
             @Override public void onProgressChanged(SeekBar s, int p, boolean f) {
-                valTv.setText(String.format("%.1f%%", p / 10f));
-                config.setSplitOverlap(p);
+                valTv.setText(String.format("%.2f%%", p / 20f));
+                config.setSplitPosition(p);
                 notifyOverlayUpdate();
             }
         });
 
-        bindButtons(R.id.overlapMinus, R.id.overlapPlus, R.id.overlapSeekBar, R.id.overlapValue, 1, 50);
+        // 粗调±1%(=±20单位) 和 细调±0.05%(=±1单位)
+        bindButtons(R.id.splitCoarseMinus, R.id.splitCoarsePlus, R.id.splitPositionSeekBar, R.id.splitPositionValue, 20, 2000);
+        bindButtons(R.id.splitFineMinus, R.id.splitFinePlus, R.id.splitPositionSeekBar, R.id.splitPositionValue, 1, 2000);
     }
 
-    /** 初始化竖屏旋转方向控件 */
-    private void initPortraitDirection() {
-        RadioGroup rg = findViewById(R.id.portraitDirectionGroup);
-        String dir = config.getPortraitDirection();
-        ((RadioButton) findViewById(dir.equals("cw") ? R.id.portraitCwRadio : R.id.portraitCcwRadio)).setChecked(true);
-        rg.setOnCheckedChangeListener((g, id) -> {
-            config.setPortraitDirection(id == R.id.portraitCwRadio ? "cw" : "ccw");
+    /** 初始化方向校正控件（左右互换 + 右旋90°） */
+    private void initOverlayDirection() {
+        // 左右互换
+        CheckBox swapCb = findViewById(R.id.overlaySwapCheckbox);
+        swapCb.setChecked(config.isOverlaySwap());
+        swapCb.setOnCheckedChangeListener((b, v) -> { config.setOverlaySwap(v); notifyOverlayUpdate(); });
+
+        // 右旋90°按钮：0→90→180→270→0 循环
+        Button rotateBtn = findViewById(R.id.overlayRotateBtn);
+        TextView rotateLabel = findViewById(R.id.overlayRotateLabel);
+        updateRotateDisplay(rotateBtn, rotateLabel);
+        rotateBtn.setOnClickListener(v -> {
+            int cur = config.getOverlayRotate();
+            int next = (cur + 90) % 360;
+            config.setOverlayRotate(next);
+            updateRotateDisplay(rotateBtn, rotateLabel);
             notifyOverlayUpdate();
         });
     }
 
-    /** 初始化横屏左右互换控件 */
-    private void initLandscapeSwap() {
-        RadioGroup rg = findViewById(R.id.landscapeSwapGroup);
-        String swap = config.getLandscapeSwap();
-        int checkedId = swap.equals("swap") ? R.id.landscapeSwapRadio :
-                        swap.equals("normal") ? R.id.landscapeNormalRadio : R.id.landscapeAutoRadio;
-        ((RadioButton) findViewById(checkedId)).setChecked(true);
-        rg.setOnCheckedChangeListener((g, id) -> {
-            String val = id == R.id.landscapeSwapRadio ? "swap" :
-                         id == R.id.landscapeNormalRadio ? "normal" : "auto";
-            config.setLandscapeSwap(val);
-            notifyOverlayUpdate();
-        });
+    /** 更新旋转按钮和标签显示 */
+    private void updateRotateDisplay(Button btn, TextView label) {
+        int rot = config.getOverlayRotate();
+        String[] labels = {"自动", "右旋90°", "右旋180°", "右旋270°"};
+        label.setText("当前: " + labels[rot / 90]);
     }
 }

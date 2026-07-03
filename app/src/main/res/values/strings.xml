@@ -45,15 +45,10 @@
     <string name="gray_level">灰度等级</string>
     <string name="gray_level_hint">底色灰度用于亮度×灰度二维插值，灰度0=纯黑，100=纯白</string>
     <string name="gray_level_current">当前灰度: %1$d%% (%2$s)</string>
-    <string name="split_overlap">边界重叠</string>
-    <string name="split_overlap_hint">左右色块边界重叠量(0.1%步进)，消除缝隙</string>
-    <string name="portrait_direction">竖屏旋转方向</string>
-    <string name="portrait_direction_hint">系统旋转到竖屏时，左物理屏在下方(CW)还是上方(CCW)</string>
-    <string name="portrait_cw">CW 左屏在下</string>
-    <string name="portrait_ccw">CCW 左屏在上</string>
-    <string name="landscape_swap">横屏左右互换</string>
-    <string name="landscape_swap_hint">自动根据旋转方向判断左/右屏位置；若校色左右颠倒，手动选择"正常"或"互换"</string>
-    <string name="landscape_swap_auto">自动判断</string>
-    <string name="landscape_swap_normal">正常（左屏在左）</string>
-    <string name="landscape_swap_swap">互换（左屏在右）</string>
+    <string name="split_position">分割位置</string>
+    <string name="split_position_hint">左右色块的边界位置，粗调1%步进，细调0.05%(约1px)步进</string>
+    <string name="overlay_direction">方向校正</string>
+    <string name="overlay_direction_hint">校色覆盖层方向不正确时，手动调整：互换左右色块或旋转布局</string>
+    <string name="overlay_swap">左右互换</string>
+    <string name="overlay_rotate">右旋90°</string>
 </resources>

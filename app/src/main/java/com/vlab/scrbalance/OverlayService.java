@@ -7,6 +7,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.database.ContentObserver;
 import android.graphics.PixelFormat;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -33,7 +34,17 @@ public class OverlayService extends Service {
     private AppConfig config;
     private FoldDetector foldDetector;
     private ContentObserver brightnessObserver;
+    private DisplayManager.DisplayListener displayListener;
     private Handler brightnessHandler;
+
+    // 缓存上次显示参数，避免无变化时反复 destroy+recreate 导致闪烁
+    private int lastLeftColor = -1;
+    private int lastRightColor = -1;
+    private int lastLeftOpacity = -1;
+    private int lastRightOpacity = -1;
+    private int lastScreenWidth = -1;
+    private int lastScreenHeight = -1;
+    private Runnable sizeCheckRunnable;
 
     @Override
     public void onCreate() {
@@ -51,7 +62,7 @@ public class OverlayService extends Service {
         });
         foldDetector.startListening();
 
-        // 监听屏幕亮度变化
+        // 监听屏幕亮度变化（事件驱动，无需定时轮询）
         brightnessHandler = new Handler();
         brightnessObserver = new ContentObserver(brightnessHandler) {
             @Override
@@ -64,15 +75,35 @@ public class OverlayService extends Service {
         getContentResolver().registerContentObserver(
                 Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS_MODE), false, brightnessObserver);
 
-        // 监听屏幕尺寸变化（系统旋转时尺寸会变化，无需依赖getRotation）
-        // 通过定期刷新覆盖层来响应旋转（亮度变化/设置更新都会触发）
-        // 另加一个定时器每5秒检查屏幕尺寸变化（确保旋转不被遗漏）
-        brightnessHandler.postDelayed(new Runnable() {
-            @Override public void run() {
-                updateOverlayForBrightness();
-                brightnessHandler.postDelayed(this, 5000);
+        // 监听屏幕尺寸/旋转变化（事件驱动，替代之前的5秒定时轮询）
+        DisplayManager displayManager = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
+        displayListener = new DisplayManager.DisplayListener() {
+            @Override
+            public void onDisplayAdded(int displayId) {}
+            @Override
+            public void onDisplayChanged(int displayId) {
+                if (displayId == Display.DEFAULT_DISPLAY) {
+                    brightnessHandler.post(() -> updateOverlayForScreenSize());
+                }
             }
-        }, 5000);
+            @Override
+            public void onDisplayRemoved(int displayId) {}
+        };
+        displayManager.registerDisplayListener(displayListener, brightnessHandler);
+
+        // 安全兜底：10秒检查屏幕尺寸变化，仅在尺寸真正变化时才刷新
+        sizeCheckRunnable = new Runnable() {
+            @Override public void run() {
+                Display display = windowManager.getDefaultDisplay();
+                android.graphics.Point realSize = new android.graphics.Point();
+                display.getRealSize(realSize);
+                if (realSize.x != lastScreenWidth || realSize.y != lastScreenHeight) {
+                    updateOverlayForScreenSize();
+                }
+                brightnessHandler.postDelayed(this, 10000);
+            }
+        };
+        brightnessHandler.postDelayed(sizeCheckRunnable, 10000);
 
         createNotificationChannel();
         startForeground(NOTIFICATION_ID, createNotification());
@@ -85,6 +116,7 @@ public class OverlayService extends Service {
         if (intent != null && intent.getAction() != null) {
             switch (intent.getAction()) {
                 case "ACTION_UPDATE":
+                    invalidateCache(); // 外部触发更新时清除缓存，确保必定刷新
                     updateOverlayForBrightness();
                     break;
                 case "ACTION_STOP":
@@ -100,8 +132,16 @@ public class OverlayService extends Service {
         super.onDestroy();
         foldDetector.stopListening();
         getContentResolver().unregisterContentObserver(brightnessObserver);
-        brightnessHandler.removeCallbacksAndMessages(null); // 移除定时器
+        DisplayManager displayManager = (DisplayManager) getSystemService(Context.DISPLAY_SERVICE);
+        if (displayListener != null) {
+            displayManager.unregisterDisplayListener(displayListener);
+        }
+        if (sizeCheckRunnable != null) {
+            brightnessHandler.removeCallbacks(sizeCheckRunnable);
+        }
+        brightnessHandler.removeCallbacksAndMessages(null);
         removeOverlay();
+        invalidateCache();
     }
 
     @Override
@@ -145,21 +185,35 @@ public class OverlayService extends Service {
         }
     }
 
-    /** 根据亮度+灰度更新覆盖层 - 核心方法 */
+    /** 根据亮度+灰度更新覆盖层 - 核心方法
+     *  仅在参数/屏幕尺寸真正变化时才刷新overlay，避免无变化时的闪烁 */
     private void updateOverlayForBrightness() {
         if (!config.isEnabled()) {
             removeOverlay();
+            invalidateCache();
             return;
         }
         if (!foldDetector.isUnfolded()) {
             removeOverlay();
+            invalidateCache();
             return;
         }
 
+        // 检查屏幕尺寸是否变化（旋转时需要重建布局）
+        Display display = windowManager.getDefaultDisplay();
+        android.graphics.Point realSize = new android.graphics.Point();
+        display.getRealSize(realSize);
+        boolean screenSizeChanged = (realSize.x != lastScreenWidth || realSize.y != lastScreenHeight);
+
         // 设置模式：暂停亮度插值，直接使用手动设置值
         if (config.isSettingsMode()) {
-            showOverlayWithValues(config.getLeftColor(), config.getRightColor(),
-                    config.getLeftOpacity(), config.getRightOpacity());
+            int lc = config.getLeftColor(), rc = config.getRightColor();
+            int lo = config.getLeftOpacity(), ro = config.getRightOpacity();
+            if (!screenSizeChanged && lc == lastLeftColor && rc == lastRightColor
+                    && lo == lastLeftOpacity && ro == lastRightOpacity) {
+                return; // 无变化，跳过刷新
+            }
+            showOverlayWithValues(lc, rc, lo, ro);
             return;
         }
 
@@ -167,15 +221,23 @@ public class OverlayService extends Service {
         int currentBrightness = getCurrentBrightness();
         int currentGrayLevel = config.getCurrentGrayLevel();
 
+        int lc, rc, lo, ro;
         if (profiles.isEmpty()) {
-            // 无亮度配置，使用直接设置值
-            showOverlayWithValues(config.getLeftColor(), config.getRightColor(),
-                    config.getLeftOpacity(), config.getRightOpacity());
+            lc = config.getLeftColor(); rc = config.getRightColor();
+            lo = config.getLeftOpacity(); ro = config.getRightOpacity();
         } else {
-            // 有配置，进行2D双线性插值
             int[] interpolated = bilinearInterpolate(profiles, currentBrightness, currentGrayLevel);
-            showOverlayWithValues(interpolated[0], interpolated[1], interpolated[2], interpolated[3]);
+            lc = interpolated[0]; rc = interpolated[1];
+            lo = interpolated[2]; ro = interpolated[3];
         }
+
+        // 参数和尺寸都没变化 → 跳过刷新，避免闪烁
+        if (!screenSizeChanged && lc == lastLeftColor && rc == lastRightColor
+                && lo == lastLeftOpacity && ro == lastRightOpacity) {
+            return;
+        }
+
+        showOverlayWithValues(lc, rc, lo, ro);
     }
 
     /**
@@ -348,159 +410,70 @@ public class OverlayService extends Service {
         return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
-    /**
-     * 旋转检测：基于保存的基准尺寸 + getRotation()辅助信号
-     *
-     * 原理：
-     * 1. 用户进入设置时保存(refW, refH)作为基准朝向
-     * 2. 运行时对比当前(curW, curH)与基准：
-     *    - 尺寸相同 → 同轴(0°或180°)
-     *    - 尺寸交叉 → 交叉轴(90°或270°)
-     * 3. getRotation()作为辅助区分具体角度：
-     *    - 同轴+rot=0 → 0°, rot=2 → 180°
-     *    - 交叉轴+rot=1 → 90°CW, rot=3 → 270°CW
-     * 4. 若getRotation()不可靠，使用portraitDirection推导fallback
-     *
-     * 返回值：相对于基准的旋转角度(0, 90, 180, 270)
+    /** 使用指定颜色和透明度值显示覆盖层
+     *  方向逻辑：自动从屏幕尺寸判断横竖 → 用户可通过swap/rotate手动校正
      */
-    private int detectRotation() {
-        int refW = config.getRefScreenW();
-        int refH = config.getRefScreenH();
-
-        // 无基准(首次运行) → 保存当前尺寸为基准，返回0°
-        if (refW == 0 || refH == 0) {
-            Display display = windowManager.getDefaultDisplay();
-            android.graphics.Point size = new android.graphics.Point();
-            display.getRealSize(size);
-            config.setRefScreenW(size.x);
-            config.setRefScreenH(size.y);
-            return 0;
-        }
-
-        Display display = windowManager.getDefaultDisplay();
-        android.graphics.Point curSize = new android.graphics.Point();
-        display.getRealSize(curSize);
-        int curW = curSize.x;
-        int curH = curSize.y;
-
-        // 2%容差（导航栏等微小变化）
-        int tolerance = Math.max(refW, refH) / 50;
-        boolean sameAxis = Math.abs(curW - refW) <= tolerance && Math.abs(curH - refH) <= tolerance;
-        boolean swappedAxis = Math.abs(curW - refH) <= tolerance && Math.abs(curH - refW) <= tolerance;
-
-        int rot = display.getRotation(); // 0=ROTATION_0, 1=ROTATION_90, 2=ROTATION_180, 3=ROTATION_270
-
-        if (sameAxis && !swappedAxis) {
-            // 同轴：0°或180°
-            if (rot == 2) return 180;
-            return 0; // getRotation()返回0或不可靠时默认0°
-        }
-
-        if (swappedAxis) {
-            // 交叉轴：90°或270°
-            // getRotation()与尺寸交叉吻合时可信
-            if (rot == 1) return 90;
-            if (rot == 3) return 270;
-            // getRotation()不可靠(返回0/2但尺寸交叉)
-            // Fallback：两种portraitDirection的默认都是"正常横屏"（左屏在左）
-            // 因为用户通常会原路旋转回到横屏
-            // cw → 从横屏CW到竖屏 → 回到横屏是270°CW → 左屏在左(normal)
-            // ccw → 从横屏CCW到竖屏 → 回到横屏是90°CW → 左屏在左(normal)
-            // 返回一个让leftProfileOnLeft=true的角度：
-            // portraitDir=cw时, 270° → leftProfileOnLeft=true
-            // portraitDir=ccw时, 90° → leftProfileOnLeft=true
-            return config.getPortraitDirection().equals("cw") ? 270 : 90;
-        }
-
-        // 尺寸完全不符（显示模式变化？）→ 默认0°
-        return 0;
-    }
-
-    /**
-     * 计算覆盖层布局：决定左/右亮度profile对应哪个覆盖半区
-     *
-     * 旋转布局推导表（基准竖屏为例）：
-     * portraitDir | rotation | 横屏左屏位置 | leftProfileOnLeft
-     * cw          | 90°      | 右侧         | false(swap)
-     * cw          | 270°     | 左侧         | true(normal)
-     * ccw         | 90°      | 左侧         | true(normal)
-     * ccw         | 270°     | 右侧         | false(swap)
-     *
-     * 公式: leftProfileOnLeft = (portraitDir=="ccw") == (rotation==90°)
-     *
-     * 竖屏: leftProfileOnBottom = portraitDir=="cw", 180°时翻转
-     */
-    private boolean[] computeOverlayLayout(int rotation) {
-        int refW = config.getRefScreenW();
-        int refH = config.getRefScreenH();
-        boolean baselinePortrait = refH > refW;
-
-        Display display = windowManager.getDefaultDisplay();
-        android.graphics.Point curSize = new android.graphics.Point();
-        display.getRealSize(curSize);
-        boolean currentPortrait = curSize.y > curSize.x;
-
-        String portraitDir = config.getPortraitDirection();
-        String landscapeSwap = config.getLandscapeSwap();
-
-        // leftProfileOnLeft: 横屏时，左profile是否对应左半区
-        // leftProfileOnBottom: 竖屏时，左profile是否对应下半区
-        boolean leftProfileOnLeft = true;
-        boolean leftProfileOnBottom = portraitDir.equals("cw");
-
-        if (currentPortrait) {
-            // 竖屏模式
-            if (rotation == 180) {
-                leftProfileOnBottom = !leftProfileOnBottom; // 180°翻转上下
-            }
-        } else {
-            // 横屏模式
-            // 自动检测时用公式推导
-            if (landscapeSwap.equals("auto")) {
-                // leftProfileOnLeft = (portraitDir=="ccw") == (rotation==90)
-                leftProfileOnLeft = (portraitDir.equals("ccw")) == (rotation == 90);
-                // 180°横屏：左右互换
-                if (rotation == 180) leftProfileOnLeft = !leftProfileOnLeft;
-            } else {
-                // 手动设置：normal=左屏在左, swap=左屏在右
-                leftProfileOnLeft = landscapeSwap.equals("normal");
-            }
-        }
-
-        return new boolean[]{leftProfileOnLeft, leftProfileOnBottom};
-    }
-
-    /** 使用指定颜色和透明度值显示覆盖层，基于旋转检测判断布局 */
     private void showOverlayWithValues(int leftColor, int rightColor, int leftOpacity, int rightOpacity) {
         removeOverlay();
 
-        // 根据旋转检测和用户配置决定：左profile对应哪个半区
-        int rotation = detectRotation();
-        boolean[] layout = computeOverlayLayout(rotation);
-        boolean leftProfileOnLeft = layout[0];   // 横屏：左profile是否在左半
-        boolean leftProfileOnBottom = layout[1];  // 竖屏：左profile是否在下半
+        // 缓存本次显示参数（用于下次变化检测）
+        lastLeftColor = leftColor;
+        lastRightColor = rightColor;
+        lastLeftOpacity = leftOpacity;
+        lastRightOpacity = rightOpacity;
 
-        // 根据布局决定实际颜色分配
-        int leftWithAlpha, rightWithAlpha;
+        boolean swap = config.isOverlaySwap();
+        int rotate = config.getOverlayRotate(); // 0=自动, 90/180/270=手动
+
+        // 自动判断横竖屏：sw >= sh → 横屏
         Display display = windowManager.getDefaultDisplay();
         android.graphics.Point realSize = new android.graphics.Point();
         display.getRealSize(realSize);
-        int screenWidth = realSize.x;
-        int screenHeight = realSize.y;
-        boolean isLandscape = screenWidth >= screenHeight;
+        boolean autoLandscape = realSize.x >= realSize.y;
+        lastScreenWidth = realSize.x;
+        lastScreenHeight = realSize.y;
 
-        if (isLandscape) {
-            // 横屏：根据leftProfileOnLeft决定颜色分配
-            leftWithAlpha = applyAlpha(leftProfileOnLeft ? leftColor : rightColor, leftProfileOnLeft ? leftOpacity : rightOpacity);
-            rightWithAlpha = applyAlpha(leftProfileOnLeft ? rightColor : leftColor, leftProfileOnLeft ? rightOpacity : leftOpacity);
+        // 应用旋转偏移：90/270翻转横竖判断，180保持但翻转布局
+        boolean effectiveLandscape;
+        if (rotate == 0) {
+            effectiveLandscape = autoLandscape;
+        } else if (rotate == 90 || rotate == 270) {
+            effectiveLandscape = !autoLandscape; // 翻转横竖
         } else {
-            // 竖屏：下半区对应leftProfileOnBottom的颜色
-            // overlayLeftView = 下半区（或上半区，取决于leftProfileOnBottom）
-            leftWithAlpha = applyAlpha(leftProfileOnBottom ? leftColor : rightColor, leftProfileOnBottom ? leftOpacity : rightOpacity);
-            rightWithAlpha = applyAlpha(leftProfileOnBottom ? rightColor : leftColor, leftProfileOnBottom ? rightOpacity : leftOpacity);
+            effectiveLandscape = autoLandscape; // 180°同轴
         }
 
-        int overlapPx = Math.round(config.getSplitOverlap() * screenWidth / 1000f); // 0.1%单位→像素
+        // 180°时翻转上下/左右
+        boolean flip180 = (rotate == 180);
+
+        // 确定颜色分配：swap互换左/右profile
+        int firstColor = swap ? rightColor : leftColor;   // 第一区域(左/上)颜色
+        int secondColor = swap ? leftColor : rightColor;   // 第二区域(右/下)颜色
+        int firstOpacity = swap ? rightOpacity : leftOpacity;
+        int secondOpacity = swap ? leftOpacity : rightOpacity;
+
+        // 180°翻转时再互换颜色
+        if (flip180) {
+            int tc = firstColor; firstColor = secondColor; secondColor = tc;
+            int to = firstOpacity; firstOpacity = secondOpacity; secondOpacity = to;
+        }
+
+        int firstWithAlpha = applyAlpha(firstColor, firstOpacity);
+        int secondWithAlpha = applyAlpha(secondColor, secondOpacity);
+
+        int screenWidth = realSize.x;
+        int screenHeight = realSize.y;
+
+        // 分割位置：config值(0-2000, 0.05%/单位) → 像素
+        // 横屏：splitPos是宽度方向的分割像素
+        // 竖屏：splitPos是高度方向的分割像素
+        int splitPx;
+        int overlapPx = 2; // 固定2px重叠消除缝隙
+        if (effectiveLandscape) {
+            splitPx = Math.round(config.getSplitPosition() * screenWidth / 2000f);
+        } else {
+            splitPx = Math.round(config.getSplitPosition() * screenHeight / 2000f);
+        }
 
         int overlayType = getOverlayType();
         int flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
@@ -511,7 +484,7 @@ public class OverlayService extends Service {
         String mode = config.getMode();
 
         if (mode.equals("custom")) {
-            // 自定义区域模式 - 使用百分比坐标（基于当前显示尺寸）
+            // 自定义区域模式
             int leftStart = config.getCustomLeftStart() * screenWidth / 100;
             int leftEnd = config.getCustomLeftEnd() * screenWidth / 100;
             int rightStart = config.getCustomRightStart() * screenWidth / 100;
@@ -520,7 +493,7 @@ public class OverlayService extends Service {
             int bottom = config.getCustomBottom() * screenHeight / 100;
 
             overlayLeftView = new View(this);
-            overlayLeftView.setBackgroundColor(leftWithAlpha);
+            overlayLeftView.setBackgroundColor(firstWithAlpha);
             WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
                     leftEnd - leftStart + overlapPx, bottom - top, overlayType, flags, PixelFormat.TRANSLUCENT);
             lp.gravity = Gravity.TOP | Gravity.LEFT;
@@ -528,31 +501,20 @@ public class OverlayService extends Service {
             windowManager.addView(overlayLeftView, lp);
 
             overlayRightView = new View(this);
-            overlayRightView.setBackgroundColor(rightWithAlpha);
+            overlayRightView.setBackgroundColor(secondWithAlpha);
             WindowManager.LayoutParams rp = new WindowManager.LayoutParams(
                     rightEnd - rightStart + overlapPx, bottom - top, overlayType, flags, PixelFormat.TRANSLUCENT);
             rp.gravity = Gravity.TOP | Gravity.LEFT;
             rp.x = rightStart - overlapPx; rp.y = top;
             windowManager.addView(overlayRightView, rp);
-        } else if (isLandscape) {
-            // 横屏：两物理屏并排，边界重叠消除缝隙
-            int halfW = screenWidth / 2;
-            overlayLeftView = addOverlayView(leftWithAlpha, 0, 0, halfW + overlapPx, screenHeight, overlayType, flags);
-            overlayRightView = addOverlayView(rightWithAlpha, halfW - overlapPx, 0, halfW + overlapPx, screenHeight, overlayType, flags);
+        } else if (effectiveLandscape) {
+            // 横屏：左半+右半，分割位置可调
+            overlayLeftView = addOverlayView(firstWithAlpha, 0, 0, splitPx + overlapPx, screenHeight, overlayType, flags);
+            overlayRightView = addOverlayView(secondWithAlpha, splitPx - overlapPx, 0, screenWidth - splitPx + overlapPx, screenHeight, overlayType, flags);
         } else {
-            // 竖屏：两物理屏上下堆叠
-            // leftWithAlpha = 下半区颜色（当leftProfileOnBottom=true时为左profile色）
-            // rightWithAlpha = 上半区颜色
-            int halfH = screenHeight / 2;
-            if (leftProfileOnBottom) {
-                // 左profile在下：下半=leftWithAlpha, 上半=rightWithAlpha
-                overlayLeftView = addOverlayView(leftWithAlpha, 0, halfH - overlapPx, screenWidth, halfH + overlapPx, overlayType, flags);
-                overlayRightView = addOverlayView(rightWithAlpha, 0, 0, screenWidth, halfH + overlapPx, overlayType, flags);
-            } else {
-                // 左profile在上：上半=leftWithAlpha, 下半=rightWithAlpha
-                overlayLeftView = addOverlayView(leftWithAlpha, 0, 0, screenWidth, halfH + overlapPx, overlayType, flags);
-                overlayRightView = addOverlayView(rightWithAlpha, 0, halfH - overlapPx, screenWidth, halfH + overlapPx, overlayType, flags);
-            }
+            // 竖屏：上半+下半，分割位置可调
+            overlayLeftView = addOverlayView(firstWithAlpha, 0, 0, screenWidth, splitPx + overlapPx, overlayType, flags);
+            overlayRightView = addOverlayView(secondWithAlpha, 0, splitPx - overlapPx, screenWidth, screenHeight - splitPx + overlapPx, overlayType, flags);
         }
     }
 
@@ -577,6 +539,7 @@ public class OverlayService extends Service {
 
     private void hideOverlay() {
         removeOverlay();
+        invalidateCache();
     }
 
     private void removeOverlay() {
@@ -588,6 +551,16 @@ public class OverlayService extends Service {
             try { windowManager.removeView(overlayRightView); } catch (Exception ignored) {}
             overlayRightView = null;
         }
+    }
+
+    /** 清除缓存参数，使下次 updateOverlayForBrightness 必定刷新 */
+    private void invalidateCache() {
+        lastLeftColor = -1;
+        lastRightColor = -1;
+        lastLeftOpacity = -1;
+        lastRightOpacity = -1;
+        lastScreenWidth = -1;
+        lastScreenHeight = -1;
     }
 
     /**
